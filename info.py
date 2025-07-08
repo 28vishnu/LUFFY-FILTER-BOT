@@ -93,11 +93,11 @@ BATCH_FILE_CAPTION = environ.get('BATCH_FILE_CAPTION', script.BATCH_CAPTION) # C
 
 
 # IMDB Info
-IMDB = bool(environ.get('IMDB', True)) # Set True or False
+IMDB = bool(environ.get('IMDB', False)) # Set to False
 IMDB_TEMPLATE = environ.get('IMDB_TEMPLATE', script.IMDB_TEMPLATE_TXT) # Corrected to IMDB_TEMPLATE_TXT
 
 # Long IMDB Description (Added this line)
-LONG_IMDB_DESCRIPTION = bool(environ.get('LONG_IMDB_DESCRIPTION', True)) # Set True or False
+LONG_IMDB_DESCRIPTION = bool(environ.get('LONG_IMDB_DESCRIPTION', False)) # Set to False
 
 
 # Spell Check
@@ -186,76 +186,76 @@ BANNED_CHATS = [int(b_chats) for b_chats in environ.get('BANNED_CHATS', '').spli
 
 
 # IMDB Watch
-IMDB_WATCH = bool(environ.get('IMDB_WATCH', True))
+IMDB_WATCH = bool(environ.get('IMDB_WATCH', False)) # Set to False
 
 # IMDB Poster
 IMDB_POSTER = bool(environ.get('IMDB_POSTER', False)) # Set to False
 
 # IMDB Plot
-IMDB_PLOT = bool(environ.get('IMDB_PLOT', True))
+IMDB_PLOT = bool(environ.get('IMDB_PLOT', False)) # Set to False
 
 # IMDB Cast
-IMDB_CAST = bool(environ.get('IMDB_CAST', True))
+IMDB_CAST = bool(environ.get('IMDB_CAST', False)) # Set to False
 
 # IMDB Director
-IMDB_DIRECTOR = bool(environ.get('IMDB_DIRECTOR', True))
+IMDB_DIRECTOR = bool(environ.get('IMDB_DIRECTOR', False)) # Set to False
 
 # IMDB Writer
-IMDB_WRITER = bool(environ.get('IMDB_WRITER', True))
+IMDB_WRITER = bool(environ.get('IMDB_WRITER', False)) # Set to False
 
 # IMDB Producer
-IMDB_PRODUCER = bool(environ.get('IMDB_PRODUCER', True))
+IMDB_PRODUCER = bool(environ.get('IMDB_PRODUCER', False)) # Set to False
 
 # IMDB Composer
-IMDB_COMPOSER = bool(environ.get('IMDB_COMPOSER', True))
+IMDB_COMPOSER = bool(environ.get('IMDB_COMPOSER', False)) # Set to False
 
 # IMDB Cinematographer
-IMDB_CINEMATOGRAPHER = bool(environ.get('IMDB_CINEMATOGRAPHER', True))
+IMDB_CINEMATOGRAPHER = bool(environ.get('IMDB_CINEMATOGRAPHER', False)) # Set to False
 
 # IMDB Music Team
-IMDB_MUSIC_TEAM = bool(environ.get('IMDB_MUSIC_TEAM', True))
+IMDB_MUSIC_TEAM = bool(environ.get('IMDB_MUSIC_TEAM', False)) # Set to False
 
 # IMDB Distributors
-IMDB_DISTRIBUTORS = bool(environ.get('IMDB_DISTRIBUTORS', True))
+IMDB_DISTRIBUTORS = bool(environ.get('IMDB_DISTRIBUTORS', False)) # Set to False
 
 # IMDB Release Date
-IMDB_RELEASE_DATE = bool(environ.get('IMDB_RELEASE_DATE', True))
+IMDB_RELEASE_DATE = bool(environ.get('IMDB_RELEASE_DATE', False)) # Set to False
 
 # IMDB Year
-IMDB_YEAR = bool(environ.get('IMDB_YEAR', True))
+IMDB_YEAR = bool(environ.get('IMDB_YEAR', False)) # Set to False
 
 # IMDB Genres
-IMDB_GENRES = bool(environ.get('IMDB_GENRES', True))
+IMDB_GENRES = bool(environ.get('IMDB_GENRES', False)) # Set to False
 
 # IMDB Rating
 IMDB_RATING = bool(environ.get('IMDB_RATING', False)) # Set to False
 
 # IMDB Votes
-IMDB_VOTES = bool(environ.get('IMDB_VOTES', True))
+IMDB_VOTES = bool(environ.get('IMDB_VOTES', False)) # Set to False
 
 # IMDB Runtime
-IMDB_RUNTIME = bool(environ.get('IMDB_RUNTIME', True))
+IMDB_RUNTIME = bool(environ.get('IMDB_RUNTIME', False)) # Set to False
 
 # IMDB Countries
-IMDB_COUNTRIES = bool(environ.get('IMDB_COUNTRIES', True))
+IMDB_COUNTRIES = bool(environ.get('IMDB_COUNTRIES', False)) # Set to False
 
 # IMDB Languages
-IMDB_LANGUAGES = bool(environ.get('IMDB_LANGUAGES', True))
+IMDB_LANGUAGES = bool(environ.get('IMDB_LANGUAGES', False)) # Set to False
 
 # IMDB Certificates
-IMDB_CERTIFICATES = bool(environ.get('IMDB_CERTIFICATES', True))
+IMDB_CERTIFICATES = bool(environ.get('IMDB_CERTIFICATES', False)) # Set to False
 
 # IMDB Box Office
-IMDB_BOX_OFFICE = bool(environ.get('IMDB_BOX_OFFICE', True))
+IMDB_BOX_OFFICE = bool(environ.get('IMDB_BOX_OFFICE', False)) # Set to False
 
 # IMDB Localized Title
-IMDB_LOCALIZED_TITLE = bool(environ.get('IMDB_LOCALIZED_TITLE', True))
+IMDB_LOCALIZED_TITLE = bool(environ.get('IMDB_LOCALIZED_TITLE', False)) # Set to False
 
 # IMDB Kind
-IMDB_KIND = bool(environ.get('IMDB_KIND', True))
+IMDB_KIND = bool(environ.get('IMDB_KIND', False)) # Set to False
 
 # IMDB AKA
-IMDB_AKA = bool(environ.get('IMDB_AKA', True))
+IMDB_AKA = bool(environ.get('IMDB_AKA', False)) # Set to False
 
 # Welcome message for new users
 MELCOW_NEW_USERS = bool(environ.get('MELCOW_NEW_USERS', True)) # Added MELCOW_NEW_USERS
@@ -285,7 +285,7 @@ VERIFY = bool(environ.get('VERIFY', False)) # Added VERIFY
 NO_RESULTS_MSG = bool(environ.get('NO_RESULTS_MSG', True)) # Added NO_RESULTS_MSG
 
 # Start Command Reactions
-REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🤓", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
+REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🤓", "😎", "�", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
 
 # Use Caption Filter
 USE_CAPTION_FILTER = bool(environ.get('USE_CAPTION_FILTER', True)) # Added USE_CAPTION_FILTER
