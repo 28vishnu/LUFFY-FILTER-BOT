@@ -1,0 +1,11 @@
+# Python virtual environments
+venv/
+venv_py312/
+*.pyc
+__pycache__/
+
+# Sensitive files (if you have them, e.g., a .env file)
+.env
+
+# Specific large files that shouldn't be tracked
+*.pyd
