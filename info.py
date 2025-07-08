@@ -13,7 +13,7 @@ id_pattern = re.compile(r'^.\d+$')
 SESSION = environ.get('SESSION', 'TechVJBot')
 API_ID = int(environ.get('API_ID', '23394197')) # Updated
 API_HASH = environ.get('API_HASH', 'c479cdf25a47b32295ff0d6b15709aac') # Updated with the provided API Hash
-BOT_TOKEN = environ.get('BOT_TOKEN', "7690497507:AAE7zJF3p0sHviJnUGaCfYHeuXQnOq0y9oQ") # Updated with the new bot token
+BOT_TOKEN = environ.get('BOT_TOKEN', "") # Reverted to empty string. This MUST be set as an environment variable on Render.
 
 
 # This Pictures Is For Start Message Picture, You Can Add Multiple By Giving One Space Between Each.
@@ -27,7 +27,7 @@ AUTH_USERS = (auth_users + ADMINS) if auth_users else []
 
 # This Channel Is For When User Start Your Bot Then Bot Send That User Name And Id In This Log Channel, Same For Group Also.
 LOG_CHANNEL = int(environ.get('LOG_CHANNEL', '-1002737880991')) # Updated
-# Updated LOG_CHANNEL to -1002737880991 as per user request
+# Updated LOG_CHANNEL to -1002737880981 as per user request
 
 # This Channel Is For When You Add Your File In This Channel Then Bot Automatically Save All Files In Your Database.
 CHANNELS = [int(ch) for ch in environ.get('CHANNELS', '').split()] # Updated (empty)
@@ -285,7 +285,7 @@ VERIFY = bool(environ.get('VERIFY', False)) # Added VERIFY
 NO_RESULTS_MSG = bool(environ.get('NO_RESULTS_MSG', True)) # Added NO_RESULTS_MSG
 
 # Start Command Reactions
-REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "�", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
+REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🤓", "😎", "�", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
 
 # Use Caption Filter
 USE_CAPTION_FILTER = bool(environ.get('USE_CAPTION_FILTER', True)) # Added USE_CAPTION_FILTER
