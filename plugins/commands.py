@@ -43,7 +43,8 @@ async def start(client, message):
             InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url=CHNL_LNK)
         ]]
         reply_markup = InlineKeyboardMarkup(buttons)
-        await message.reply(script.START_TXT.format(message.from_user.mention if message.from_user else message.chat.title, temp.U_NAME, temp.B_NAME), reply_markup=reply_markup, disable_web_page_preview=True)
+        # Updated START_TXT format to include CHNL_LNK and GRP_LNK
+        await message.reply(script.START_TXT.format(message.from_user.mention if message.from_user else message.chat.title, CHNL_LNK, GRP_LNK), reply_markup=reply_markup, disable_web_page_preview=True)
         await asyncio.sleep(2) # 😢 https://github.com/EvamariaTG/EvaMaria/blob/master/plugins/p_ttishow.py#L17 😬 wait a bit, before checking.
         if not await db.get_chat(message.chat.id):
             total=await client.get_chat_members_count(message.chat.id)
@@ -103,14 +104,16 @@ async def start(client, message):
             if photo_to_send:
                 await message.reply_photo(
                     photo=photo_to_send,
-                    caption=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+                    # Updated START_TXT format to include CHNL_LNK and GRP_LNK
+                    caption=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
                     reply_markup=reply_markup,
                     parse_mode=enums.ParseMode.HTML
                 )
             else:
                 # If no photo, send only text
                 await message.reply_text(
-                    text=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+                    # Updated START_TXT format to include CHNL_LNK and GRP_LNK
+                    text=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
                     reply_markup=reply_markup,
                     parse_mode=enums.ParseMode.HTML,
                     disable_web_page_preview=True # Disable preview if no photo is sent
@@ -119,7 +122,8 @@ async def start(client, message):
             logger.error(f"Error in sending start photo/text: {e}")
             # Fallback to sending only text if photo sending fails
             await message.reply_text(
-                text=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+                # Updated START_TXT format to include CHNL_LNK and GRP_LNK
+                text=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
                 reply_markup=reply_markup,
                 parse_mode=enums.ParseMode.HTML,
                 disable_web_page_preview=True
@@ -209,13 +213,15 @@ async def start(client, message):
             if photo_to_send:
                 await message.reply_photo(
                     photo=photo_to_send,
-                    caption=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+                    # Updated START_TXT format to include CHNL_LNK and GRP_LNK
+                    caption=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
                     reply_markup=reply_markup,
                     parse_mode=enums.ParseMode.HTML
                 )
             else:
                 await message.reply_text(
-                    text=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+                    # Updated START_TXT format to include CHNL_LNK and GRP_LNK
+                    text=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
                     reply_markup=reply_markup,
                     parse_mode=enums.ParseMode.HTML,
                     disable_web_page_preview=True
@@ -223,7 +229,8 @@ async def start(client, message):
         except Exception as e:
             logger.error(f"Error in sending start photo/text (with command arg): {e}")
             await message.reply_text(
-                text=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+                # Updated START_TXT format to include CHNL_LNK and GRP_LNK
+                text=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
                 reply_markup=reply_markup,
                 parse_mode=enums.ParseMode.HTML,
                 disable_web_page_preview=True
@@ -291,13 +298,15 @@ async def start(client, message):
                 if photo_to_send:
                     await message.reply_photo(
                         photo=photo_to_send,
-                        caption=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+                        # Updated START_TXT format to include CHNL_LNK and GRP_LNK
+                        caption=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
                         reply_markup=reply_markup,
                         parse_mode=enums.ParseMode.HTML
                     )
                 else:
                     await message.reply_text(
-                        text=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+                        # Updated START_TXT format to include CHNL_LNK and GRP_LNK
+                        text=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
                         reply_markup=reply_markup,
                         parse_mode=enums.ParseMode.HTML,
                         disable_web_page_preview=True
@@ -305,7 +314,8 @@ async def start(client, message):
             except Exception as e:
                 logger.error(f"Error in sending start photo/text (referral mode): {e}")
                 await message.reply_text(
-                    text=script.START_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+                    # Updated START_TXT format to include CHNL_LNK and GRP_LNK
+                    text=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
                     reply_markup=reply_markup,
                     parse_mode=enums.ParseMode.HTML,
                     disable_web_page_preview=True
@@ -385,7 +395,7 @@ async def start(client, message):
                 continue
             await asyncio.sleep(1) 
         await sts.delete()
-        k = await client.send_message(chat_id = message.from_user.id, text=f"<blockquote><b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ <b><u>10 mins</u> 🫥 <i></b>(ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs)</i>.\n\n<b><i>ᴘʟᴇᴀsᴇ ғᴏʀᴡᴀʀᴅ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ᴏʀ ᴀɴy ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ.</i></b></blockquote>")
+        k = await client.send_message(chat_id = message.from_user.id, text=f"<blockquote><b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ <b><u>10 mins</u> 🫥 <i></b>(ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs)</i>.\n\n<b><i>ᴘʟᴇᴀsᴇ ғᴏʀᴡᴀʀᴅ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ᴏʀ ᴀɴy ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ.</i></b></div>")
         await asyncio.sleep(600)
         for x in filesarr:
             await x.delete()
@@ -455,7 +465,7 @@ async def start(client, message):
             filesarr.append(p)
             await asyncio.sleep(1)
         await sts.delete()
-        k = await client.send_message(chat_id = message.from_user.id, text=f"<blockquote><b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ <b><u>10 mins</u> 🫥 <i></b>(ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs)</i>.\n\n<b><i>ᴘʟᴇᴀsᴇ ғᴏʀᴡᴀʀᴅ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ᴏʀ ᴀɴy ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ.</i></b></blockquote>")
+        k = await client.send_message(chat_id = message.from_user.id, text=f"<blockquote><b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ <b><u>10 mins</u> 🫥 <i></b>(ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs)</i>.\n\n<b><i>ᴘʟᴇᴀsᴇ ғᴏʀᴡᴀʀᴅ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ᴏʀ ᴀɴy ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ.</i></b></div>")
         await asyncio.sleep(600)
         for x in filesarr:
             await x.delete()
@@ -560,7 +570,7 @@ async def start(client, message):
                     return
             await msg.edit_caption(caption=f_caption)
             btn = [[InlineKeyboardButton("✅ ɢᴇᴛ ғɪʟᴇ ᴀɢᴀɪɴ ✅", callback_data=f'del#{file_id}')]]
-            k = await msg.reply(text=f"<blockquote><b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ <b><u>10 mins</u> 🫥 <i></b>(ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs)</i>.\n\n<b><i>ᴘʟᴇᴀsᴇ ғᴏʀᴡᴀʀᴅ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ᴏʀ ᴀɴy ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ.</i></b></blockquote>")
+            k = await msg.reply(text=f"<blockquote><b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ <b><u>10 mins</u> 🫥 <i></b>(ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs)</i>.\n\n<b><i>ᴘʟᴇᴀsᴇ ғᴏʀᴡᴀʀᴅ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ᴏʀ ᴀɴy ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ.</i></b></div>")
             await asyncio.sleep(600)
             await msg.delete()
             await k.edit_text("<b>✅ ʏᴏᴜʀ ᴍᴇssᴀɢᴇ ɪs sᴜᴄᴄᴇssғᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ ɪғ ʏᴏᴜ ᴡᴀɴᴛ ᴀɢᴀɪɴ ᴛʜᴇɴ ᴄʟɪᴄᴋ ᴏɴ ʙᴇʟᴏᴡ ʙᴜᴛᴛᴏɴ</b>",reply_markup=InlineKeyboardMarkup(btn))
@@ -609,7 +619,7 @@ async def start(client, message):
         reply_markup=reply_markup
     )
     btn = [[InlineKeyboardButton("✅ ɢᴇᴛ ғɪʟᴇ ᴀɢᴀɪɴ ✅", callback_data=f'del#{file_id}')]]
-    k = await msg.reply(text=f"<blockquote><b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ <b><u>10 mins</u> 🫥 <i></b>(ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs)</i>.\n\n<b><i>ᴘʟᴇᴀsᴇ ғᴏʀᴡᴀʀᴅ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ᴏʀ ᴀɴy ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ.</i></b></blockquote>")
+    k = await msg.reply(text=f"<blockquote><b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ <b><u>10 mins</u> 🫥 <i></b>(ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs)</i>.\n\n<b><i>ᴘʟᴇᴀsᴇ ғᴏʀᴡᴀʀᴅ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ᴏʀ ᴀɴy ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ.</i></b></div>")
     await asyncio.sleep(600)
     await msg.delete()
     await k.edit_text("<b>✅ ʏᴏᴜʀ ᴍᴇssᴀɢᴇ ɪs sᴜᴄᴄᴇssғᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ ɪғ ʏᴏᴜ ᴡᴀɴᴛ ᴀɢᴀɪɴ ᴛʜᴇɴ ᴄʟɪᴄᴋ ᴏɴ ʙᴇʟᴏᴡ ʙᴜᴛᴛᴏɴ</b>",reply_markup=InlineKeyboardMarkup(btn))
@@ -957,7 +967,7 @@ async def requests(bot, message):
                     InlineKeyboardButton('View Request', url=f"{message.reply_to_message.link}"),
                     InlineKeyboardButton('Show Options', callback_data=f'show_option#{reporter}')
                 ]]
-                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝗍𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
+                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋�𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
                 success = True
             elif len(content) >= 3:
                 for admin in ADMINS:
@@ -965,7 +975,7 @@ async def requests(bot, message):
                         InlineKeyboardButton('View Request', url=f"{message.reply_to_message.link}"),
                         InlineKeyboardButton('Show Options', callback_data=f'show_option#{reporter}')
                     ]]
-                    reported_post = await bot.send_message(chat_id=admin, text=f"<b>𝖱𝖾𝗉𝗈𝗋�𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
+                    reported_post = await bot.send_message(chat_id=admin, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝗍𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
                     success = True
             else:
                 if len(content) < 3:
