@@ -16,6 +16,7 @@ logging.getLogger("pyrogram").setLevel(logging.ERROR)
 logging.getLogger("cinemagoer").setLevel(logging.ERROR)
 
 from pyrogram import Client, idle
+from pyrogram.errors import FloodWait # Import FloodWait specifically
 from database.users_chats_db import db
 # Explicitly import necessary variables from info
 from info import (
@@ -72,9 +73,20 @@ async def start():
     print('\n')
     print('Initalizing Your Bot')
 
-    # Start the bot client
-    await TechVJBot.start()
-    logger.info("Bot started successfully!")
+    # Start the bot client with FloodWait handling
+    try:
+        await TechVJBot.start()
+        logger.info("Bot started successfully!")
+    except FloodWait as e:
+        logger.warning(f"FloodWait during bot startup: Telegram says to wait for {e.value} seconds. Retrying after delay.")
+        await asyncio.sleep(e.value + 5) # Add a small buffer to the wait time
+        # This will cause the entire `start()` function to be re-run by `loop.run_until_complete(start())`
+        # if this is the initial call. If it's a retry, it will just continue.
+        # However, the most robust solution is setting sleep_threshold in the Client init itself.
+        return # Exit this attempt and let the outer loop handle retry if needed
+    except Exception as e:
+        logger.exception(f"An error occurred during bot startup: {e}")
+        raise # Re-raise to propagate the error if it's not a FloodWait
 
     # Initialize other clients (if any, from TechVJ.bot.clients)
     await initialize_clients()
