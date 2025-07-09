@@ -272,12 +272,12 @@ CACHE_TIME = int(environ.get('CACHE_TIME', 300)) # Added CACHE_TIME
 PUBLIC_FILE_STORE = bool(environ.get('PUBLIC_FILE_STORE', True)) # Added PUBLIC_FILE_STORE
 
 # Support Chat
-SUPPORT_CHAT = environ.get('SUPPORT_CHAT', 'luffydev2k') # Added SUPPORT_CHAT
+SUPPORT_CHAT = environ.get('SUPPORT_CHAT', 'cinebotofclgrup') # Changed to cinebotofclgrup
 # If SUPPORT_CHAT_ID is a numerical ID for a support group/channel, define it here:
-# SUPPORT_CHAT_ID = int(environ.get('SUPPORT_CHAT_ID', 'YOUR_SUPPORT_CHAT_ID_HERE')) # Example: -1001234567890
+SUPPORT_CHAT_ID = int(environ.get('SUPPORT_CHAT_ID', '0')) # Default to 0 if not set, user should provide a valid ID
 
 # Owner Link
-OWNER_LNK = environ.get('OWNER_LNK', 'https://t.me/luffydev2k') # Added OWNER_LNK
+OWNER_LNK = environ.get('OWNER_LNK', 'https://t.me/KingVJ01') # Changed to KingVJ01
 
 # Channel Link
 CHNL_LNK = environ.get('CHNL_LNK', 'https://t.me/cineofcl') # Added CHNL_LNK
