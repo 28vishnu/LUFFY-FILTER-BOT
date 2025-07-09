@@ -278,6 +278,9 @@ CHNL_LNK = environ.get('CHNL_LNK', 'https://t.me/cineofcl') # Added CHNL_LNK
 # Group Link
 GRP_LNK = environ.get('GRP_LNK', 'https://t.me/cinebotofclgrup') # Added GRP_LNK
 
+# Source Code Link (NEWLY ADDED)
+SOURCE_CODE_LNK = environ.get('SOURCE_CODE_LNK', 'DM TO ADMIN') # ADD THIS LINE AND REPLACE WITH YOUR GITHUB LINK
+
 # Verify
 VERIFY = bool(environ.get('VERIFY', False)) # Added VERIFY
 
