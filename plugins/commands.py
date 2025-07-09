@@ -10,7 +10,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, 
 from database.ia_filterdb import col, sec_col, get_file_details, unpack_new_file_id, get_bad_files
 from database.users_chats_db import db, delete_all_referal_users, get_referal_users_count, get_referal_all_users, referal_add_user
 from database.join_reqs import JoinReqs
-from info import CLONE_MODE, OWNER_LNK, REACTIONS, CHANNELS, REQUEST_TO_JOIN_MODE, TRY_AGAIN_BTN, ADMINS, SHORTLINK_MODE, PREMIUM_AND_REFERAL_MODE, STREAM_MODE, AUTH_CHANNEL, REFERAL_PREMEIUM_TIME, REFERAL_COUNT, PAYMENT_TEXT, PAYMENT_QR, LOG_CHANNEL, PICS, ABOUT_PICS, BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT, CHNL_LNK, GRP_LNK, REQST_CHANNEL, SUPPORT_CHAT, MAX_BTN, VERIFY, SHORTLINK_API, SHORTLINK_URL, TUTORIAL, VERIFY_TUTORIAL, IS_TUTORIAL, URL, BOT_USERNAME, BOT_NAME 
+from info import CLONE_MODE, OWNER_LNK, REACTIONS, CHANNELS, REQUEST_TO_JOIN_MODE, TRY_AGAIN_BTN, ADMINS, SHORTLINK_MODE, PREMIUM_AND_REFERAL_MODE, STREAM_MODE, AUTH_CHANNEL, REFERAL_PREMEIUM_TIME, REFERAL_COUNT, PAYMENT_TEXT, PAYMENT_QR, LOG_CHANNEL, PICS, ABOUT_PICS, BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT, CHNL_LNK, GRP_LNK, REQST_CHANNEL, SUPPORT_CHAT, MAX_BTN, VERIFY, SHORTLINK_API, SHORTLINK_URL, TUTORIAL, VERIFY_TUTORIAL, IS_TUTORIAL, URL, BOT_USERNAME, BOT_NAME, SOURCE_CODE_LNK # Ensure BOT_USERNAME and SOURCE_CODE_LNK are imported
 from utils import get_settings, pub_is_subscribed, get_size, is_subscribed, save_group_settings, temp, verify_user, check_token, check_verification, get_token, get_shortlink, get_tutorial, get_seconds
 from database.connections_mdb import active_connection
 from urllib.parse import quote_plus
@@ -909,7 +909,7 @@ async def requests(bot, message):
                     InlineKeyboardButton('View Request', url=f"{message.reply_to_message.link}"),
                     InlineKeyboardButton('Show Options', callback_data=f'show_option#{reporter}')
                 ]]
-                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
+                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾�𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
                 success = True
             elif len(content) >= 3:
                 for admin in ADMINS:
@@ -944,7 +944,7 @@ async def requests(bot, message):
                     InlineKeyboardButton('View Request', url=f"{message.link}"),
                     InlineKeyboardButton('Show Options', callback_data=f'show_option#{reporter}')
                 ]]
-                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝗍𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺�𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
+                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝗍𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
                 success = True
             elif len(content) >= 3:
                 for admin in ADMINS:
@@ -1236,7 +1236,7 @@ async def fsub(client, message):
         return
     userid = message.from_user.id
     user = await client.get_chat_member(grpid, userid)
-    if user.status != enums.ChatMemberStatus.ADMINISTRATOR and user.status != enums.ChatMemberStatus.OWNER and str(userid) not in ADMINS:
+    if user.status != enums.ChatMemberMember.ADMINISTRATOR and user.status != enums.ChatMemberStatus.OWNER and str(userid) not in ADMINS: # Corrected ChatMemberStatus.ADMINISTRATOR
         return
     else:
         pass
@@ -1548,19 +1548,19 @@ async def cb_handler(client: Client, query: CallbackQuery):
             InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
             InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
         ],[
-            InlineKeyboardButton('ʀᴇǫᴜᴇsᴛ sᴏᴜʀᴄᴇ ᴄᴏᴅᴇ', url=OWNER_LNK) # New button for source code
+            InlineKeyboardButton('ʀᴇǫᴜᴇsᴛ sᴏᴜʀᴄᴇ ᴄᴏᴅᴇ', callback_data='request_source_code') # Changed to callback
         ]]
         if CLONE_MODE == True:
             about_buttons.append([InlineKeyboardButton('ᴄʀᴇᴀᴛᴇ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
 
         if about_photo_to_send:
             await query.message.edit_media(
-                media=InputMediaPhoto(about_photo_to_send, caption=script.ABOUT_TXT.format(BOT_NAME, BOT_USERNAME, client.mention, OWNER_LNK, SUPPORT_CHAT)),
+                media=InputMediaPhoto(about_photo_to_send, caption=script.ABOUT_TXT.format(BOT_NAME, BOT_USERNAME, query.from_user.id, client.mention, SUPPORT_CHAT, SOURCE_CODE_LNK)), # Corrected format args
                 reply_markup=InlineKeyboardMarkup(about_buttons)
             )
         else:
             await query.message.edit_text(
-                text=script.ABOUT_TXT.format(BOT_NAME, BOT_USERNAME, client.mention, OWNER_LNK, SUPPORT_CHAT),
+                text=script.ABOUT_TXT.format(BOT_NAME, BOT_USERNAME, query.from_user.id, client.mention, SUPPORT_CHAT, SOURCE_CODE_LNK), # Corrected format args
                 reply_markup=InlineKeyboardMarkup(about_buttons),
                 disable_web_page_preview=True,
                 parse_mode=enums.ParseMode.HTML
@@ -1616,13 +1616,22 @@ async def cb_handler(client: Client, query: CallbackQuery):
     elif cb_data == "shortlink_info":
         buttons = [[
             InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
-            InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help')
+            InlineKeyboardButton('ᴇɴɢʟɪsʜ', callback_data='lang_en')
         ],[
-            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
-            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+            InlineKeyboardButton('ᴛᴀᴍɪʟ', callback_data='lang_ta'),
+            InlineKeyboardButton('ᴛᴇʟᴜɢᴜ', callback_data='lang_te')
+        ],[
+            InlineKeyboardButton('ʜɪɴᴅɪ', callback_data='lang_hi'),
+            InlineKeyboardButton('ᴍᴀʟᴀʏᴀʟᴀᴍ', callback_data='lang_ml')
+        ],[
+            InlineKeyboardButton('ᴜʀᴅᴜ', callback_data='lang_ur'),
+            InlineKeyboardButton('ɢᴜᴊᴀʀᴀᴛɪ', callback_data='lang_gu')
+        ],[
+            InlineKeyboardButton('ᴋᴀɴɴᴀᴅᴀ', callback_data='lang_kn'),
+            InlineKeyboardButton('ʙᴀɴɢʟᴀᴅᴇsʜ', callback_data='lang_bn')
         ]]
         await query.message.edit_text(
-            text=script.SHORTLINK_INFO.format(BOT_NAME, BOT_USERNAME, OWNER_LNK, SUPPORT_CHAT),
+            text=script.SHORTLINK_INFO, # No need for format args here as per script.py
             reply_markup=InlineKeyboardMarkup(buttons),
             disable_web_page_preview=True,
             parse_mode=enums.ParseMode.HTML
@@ -2880,3 +2889,143 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 await save_group_settings(int(_[3]), 'is_shortlink', False)
             else:
                 await save_group_settings(int(_[3]), 'is_shortlink', True)
+
+    elif cb_data == "request_source_code":
+        await query.answer("Please DM the admin for source code.", show_alert=True)
+        # You can optionally send a message to the user's PM or edit the current message
+        # await query.message.reply_text("Please DM the admin for source code.")
+
+    elif cb_data == "lang_en":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data='shortlink_info')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.ENGLISH_INFO.format(query.from_user.mention),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data == "lang_bn":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data='shortlink_info')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.BANGLADESH_INFO.format(query.from_user.mention),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+    
+    elif cb_data == "lang_ta":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data='shortlink_info')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.TAMIL_INFO.format(query.from_user.mention),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data == "lang_te":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data='shortlink_info')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.TELUGU_INFO.format(query.from_user.mention),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data == "lang_hi":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data='shortlink_info')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.HINDI_INFO.format(query.from_user.mention),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data == "lang_ml":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data='shortlink_info')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.MALAYALAM_INFO.format(query.from_user.mention),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data == "lang_ur":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data='shortlink_info')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.URTU_INFO.format(query.from_user.mention),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data == "lang_gu":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data='shortlink_info')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.GUJARATI_INFO.format(query.from_user.mention),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data == "lang_kn":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data='shortlink_info')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.KANNADA_INFO.format(query.from_user.mention),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
