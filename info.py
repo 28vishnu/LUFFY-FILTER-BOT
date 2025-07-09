@@ -17,7 +17,8 @@ BOT_TOKEN = environ.get('BOT_TOKEN', "") # Reverted to empty string. This MUST b
 
 
 # This Pictures Is For Start Message Picture, You Can Add Multiple By Giving One Space Between Each.
-PICS = (environ.get('PICS', 'https://content-proxy.google.com/fetch?url=https%3A%2F%2Fstorage.googleapis.com%2Fgenerative-ai-docs%2Ftools%2Ffile-content-store%2F804355c2-73d9-4270-a5f8-a6ca490c36df%2Fphoto_5946424892268328537_x.jpg')).split() # Changed default to an empty string to remove the image
+# Using a default working Telegraph image. Replace with your own direct Telegraph image URL(s) or Telegram File ID(s).
+PICS = (environ.get('PICS', 'https://graph.org/file/ce1723991756e48c35aa1.jpg')).split() 
 
 
 # Admins & Users
@@ -285,7 +286,7 @@ VERIFY = bool(environ.get('VERIFY', False)) # Added VERIFY
 NO_RESULTS_MSG = bool(environ.get('NO_RESULTS_MSG', True)) # Added NO_RESULTS_MSG
 
 # Start Command Reactions
-REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "�", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
+REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🏆", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
 
 # Use Caption Filter
 USE_CAPTION_FILTER = bool(environ.get('USE_CAPTION_FILTER', True)) # Added USE_CAPTION_FILTER
