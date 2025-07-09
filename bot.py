@@ -15,6 +15,9 @@ logging.getLogger().setLevel(logging.INFO)
 logging.getLogger("pyrogram").setLevel(logging.ERROR)
 logging.getLogger("cinemagoer").setLevel(logging.ERROR)
 
+# Define the logger instance
+logger = logging.getLogger(__name__)
+
 from pyrogram import Client, idle
 from pyrogram.errors import FloodWait # Import FloodWait specifically
 from database.users_chats_db import db
@@ -169,4 +172,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logging.info('Service Stopped Bye 👋')
     except Exception as e:
-        logging.exception(f"An unhandled error occurred in main execution: {e}")
+        # Log the unhandled exception before exiting
+        logger.exception(f"An unhandled error occurred in main execution: {e}")
