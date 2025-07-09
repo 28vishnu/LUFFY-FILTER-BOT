@@ -267,16 +267,16 @@ CACHE_TIME = int(environ.get('CACHE_TIME', 300)) # Added CACHE_TIME
 PUBLIC_FILE_STORE = bool(environ.get('PUBLIC_FILE_STORE', True)) # Added PUBLIC_FILE_STORE
 
 # Support Chat
-SUPPORT_CHAT = environ.get('SUPPORT_CHAT', 'KingVj01') # Added SUPPORT_CHAT
+SUPPORT_CHAT = environ.get('SUPPORT_CHAT', 'luffydev2k') # Added SUPPORT_CHAT
 
 # Owner Link
-OWNER_LNK = environ.get('OWNER_LNK', 'https://t.me/KingVj01') # Added OWNER_LNK
+OWNER_LNK = environ.get('OWNER_LNK', 'https://t.me/luffydev2k') # Added OWNER_LNK
 
 # Channel Link
-CHNL_LNK = environ.get('CHNL_LNK', 'https://t.me/Tech_VJ') # Added CHNL_LNK
+CHNL_LNK = environ.get('CHNL_LNK', 'https://t.me/cineofcl') # Added CHNL_LNK
 
 # Group Link
-GRP_LNK = environ.get('GRP_LNK', 'https://t.me/VJ_Botz') # Added GRP_LNK
+GRP_LNK = environ.get('GRP_LNK', 'https://t.me/cinebotofclgrup') # Added GRP_LNK
 
 # Verify
 VERIFY = bool(environ.get('VERIFY', False)) # Added VERIFY
