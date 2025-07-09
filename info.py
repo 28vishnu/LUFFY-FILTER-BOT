@@ -21,7 +21,7 @@ BOT_TOKEN = environ.get('BOT_TOKEN', "") # Reverted to empty string. This MUST b
 PICS = (environ.get('PICS', 'AgACAgUAAxkBAAICuGht-6GMOH1PNyf31mjemh8PCzcYAALPxDEbEDJwV5LouvHkzjTeAAgBAAMCAAN4AAceBA')).split()
 
 # This Picture is for the About section. Replace with your desired image's direct URL or File ID.
-ABOUT_PICS = (environ.get('ABOUT_PICS', 'AgACAgUAAxkBAAICvmht_dkt7a0TDzyQjFGzK1eKOA8-AAKDxDEblp5wV74Yf3LKvjrrAAgBAAMCAAN4AAceBA')).split()
+ABOUT_PICS = (environ.get('ABOUT_PICS', 'https://graph.org/file/ce1723991756e48c35aa1.jpg')).split()
 
 
 # Admins & Users
