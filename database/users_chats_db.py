@@ -4,61 +4,66 @@
 
 import re
 from pymongo.errors import DuplicateKeyError
-import motor.motor_asyncio # Ensure this is imported for async operations
-from pymongo import MongoClient # Keep for the referal_user client if it's synchronous or convert it too
+import motor.motor_asyncio
+import info # Import the whole info module
 import time
 import datetime
+import logging # Import logging
+
+logger = logging.getLogger(__name__) # Initialize logger
 
 # Changed to motor.motor_asyncio.AsyncIOMotorClient for asynchronous operations
-my_client_referal = motor.motor_asyncio.AsyncIOMotorClient(OTHER_DB_URI)
-mydb_referal = my_client_referal["referal_user"] # Renamed to avoid conflict with self.db in Database class
+# Access OTHER_DB_URI from the info module
+my_client_referal = motor.motor_asyncio.AsyncIOMotorClient(info.OTHER_DB_URI)
+mydb_referal = my_client_referal["referal_user"]
+
 
 async def referal_add_user(user_id, ref_user_id):
-    user_db = mydb_referal[str(user_id)] # Use mydb_referal
+    user_db = mydb_referal[str(user_id)]
     user = {'_id': ref_user_id}
     try:
-        await user_db.insert_one(user) # Added await
+        await user_db.insert_one(user)
         return True
     except DuplicateKeyError:
         return False
-    except Exception as e: # Catch specific exception
-        logging.error(f"Error in referal_add_user: {e}")
+    except Exception as e:
+        logger.error(f"Error in referal_add_user: {e}")
         return False
     
 
 async def get_referal_all_users(user_id):
-    user_db = mydb_referal[str(user_id)] # Use mydb_referal
-    return user_db.find() # This returns a cursor, needs to_list() if all results are needed
+    user_db = mydb_referal[str(user_id)]
+    return user_db.find() # Returns a cursor
 
 
 async def get_referal_users_count(user_id):
-    user_db = mydb_referal[str(user_id)] # Use mydb_referal
-    count = await user_db.count_documents({}) # Added await
+    user_db = mydb_referal[str(user_id)]
+    count = await user_db.count_documents({})
     return count
     
 
 async def delete_all_referal_users(user_id):
-    user_db = mydb_referal[str(user_id)] # Use mydb_referal
-    await user_db.delete_many({}) # Added await
+    user_db = mydb_referal[str(user_id)]
+    await user_db.delete_many({})
 
 
 default_setgs = {
-    'button': BUTTON_MODE,
-    'file_secure': PROTECT_CONTENT,
-    'imdb': IMDB,
-    'spell_check': SPELL_CHECK_REPLY,
-    'welcome': MELCOW_NEW_USERS,
-    'auto_delete': AUTO_DELETE,
-    'auto_ffilter': AUTO_FFILTER,
-    'max_btn': MAX_BTN,
-    'template': IMDB_TEMPLATE,
-    'caption': CUSTOM_FILE_CAPTION,
-    'shortlink': SHORTLINK_URL,
-    'shortlink_api': SHORTLINK_API,
-    'is_shortlink': SHORTLINK_MODE,
+    'button': info.BUTTON_MODE, # Access from info
+    'file_secure': info.PROTECT_CONTENT, # Access from info
+    'imdb': info.IMDB, # Access from info
+    'spell_check': info.SPELL_CHECK_REPLY, # Access from info
+    'welcome': info.MELCOW_NEW_USERS, # Access from info
+    'auto_delete': info.AUTO_DELETE, # Access from info
+    'auto_ffilter': info.AUTO_FFILTER, # Access from info
+    'max_btn': info.MAX_BTN, # Access from info
+    'template': info.IMDB_TEMPLATE, # Access from info
+    'caption': info.CUSTOM_FILE_CAPTION, # Access from info
+    'shortlink': info.SHORTLINK_URL, # Access from info
+    'shortlink_api': info.SHORTLINK_API, # Access from info
+    'is_shortlink': info.SHORTLINK_MODE, # Access from info
     'fsub': None,
-    'tutorial': TUTORIAL,
-    'is_tutorial': IS_TUTORIAL
+    'tutorial': info.TUTORIAL, # Access from info
+    'is_tutorial': info.IS_TUTORIAL # Access from info
 }
 
 
@@ -67,9 +72,9 @@ class Database:
     def __init__(self, uri, database_name):
         self._client = motor.motor_asyncio.AsyncIOMotorClient(uri)
         self.db = self._client[database_name]
-        self.col = self.db.users # This collection seems to store general user info
+        self.col = self.db.users
         self.grp = self.db.groups
-        self.users = self.db.uersz # This collection seems to store premium/trial user info
+        self.users = self.db.uersz
         self.bot = self.db.clone_bots
 
 
@@ -111,26 +116,18 @@ class Database:
         count = await self.col.count_documents({})
         return count
 
-    # Added a placeholder for total_files_count as it's called in pm_filter.py
+    # Corrected total_files_count implementation
     async def total_files_count(self):
-        # This function needs to access the file database (ia_filterdb's collections)
-        # To avoid circular imports, you might need to pass the collections or
-        # import ia_filterdb.col and ia_filterdb.sec_col here.
-        # For now, returning a dummy value or implementing a simple count.
-        # A more robust solution would be to pass the file collections to this DB class
-        # or have ia_filterdb expose a count function.
-        # Assuming ia_filterdb.col and ia_filterdb.sec_col are globally accessible or passed.
-        # For a quick fix, let's just return a placeholder or count a dummy collection.
-        # This needs to be properly implemented based on your file saving DB setup.
-        # For now, let's return 0 or log a warning.
-        logging.warning("total_files_count not fully implemented in users_chats_db.py. Returning 0.")
-        return 0 
-        # Example of how it *might* be implemented if ia_filterdb's collections are accessible:
-        # from database.ia_filterdb import col as file_col, sec_col as sec_file_col, MULTIPLE_DATABASE
-        # count = await file_col.count_documents({})
-        # if MULTIPLE_DATABASE and sec_file_col:
-        #     count += await sec_file_col.count_documents({})
-        # return count
+        try:
+            # Import here to avoid circular dependency at module level
+            from database.ia_filterdb import col as file_col, sec_col as sec_file_col, MULTIPLE_DATABASE
+            count = await file_col.count_documents({})
+            if MULTIPLE_DATABASE and sec_file_col:
+                count += await sec_file_col.count_documents({})
+            return count
+        except Exception as e:
+            logger.error(f"Error getting total files count: {e}")
+            return 0
 
 
     async def add_clone_bot(self, bot_id, user_id, bot_token):
@@ -167,7 +164,7 @@ class Database:
         await self.bot.update_one({"bot_id": bot_id}, {"$set": bot_data}, upsert=True)
     
     async def get_all_bots(self):
-        return self.bot.find({}) # Returns a cursor, needs to_list() if all results are needed
+        return self.bot.find({})
         
     async def remove_ban(self, id):
         ban_status = dict(
@@ -194,7 +191,7 @@ class Database:
         return user.get('ban_status', default)
 
     async def get_all_users(self):
-        return self.col.find({}) # Returns a cursor, needs to_list() if all results are needed
+        return self.col.find({})
     
 
     async def delete_user(self, user_id):
@@ -204,8 +201,8 @@ class Database:
     async def get_banned(self):
         users_cursor = self.col.find({'ban_status.is_banned': True})
         chats_cursor = self.grp.find({'chat_status.is_disabled': True})
-        b_chats = [chat['id'] async for chat in chats_cursor] # Iterate asynchronously
-        b_users = [user['id'] async for user in users_cursor] # Iterate asynchronously
+        b_chats = [chat['id'] async for chat in chats_cursor]
+        b_users = [user['id'] async for user in users_cursor]
         return b_users, b_chats
     
 
@@ -252,12 +249,10 @@ class Database:
     
 
     async def get_all_chats(self):
-        return self.grp.find({}) # Returns a cursor, needs to_list() if all results are needed
+        return self.grp.find({})
 
 
     async def get_db_size(self):
-        # This might return the size of the whole database, not just specific collections.
-        # For specific collection size, you might need to query that collection's stats.
         return (await self.db.command("dbstats"))['dataSize']
 
     async def get_user(self, user_id):
@@ -272,7 +267,6 @@ class Database:
         if user_data:
             expiry_time = user_data.get("expiry_time")
             if expiry_time is None:
-                # User previously used the free trial, but it has ended.
                 return False
             elif isinstance(expiry_time, datetime.datetime) and datetime.datetime.now() <= expiry_time:
                 return True
@@ -284,7 +278,6 @@ class Database:
         user_id = userid
         user_data = await self.get_user(user_id)        
         expiry_time = user_data.get("expiry_time")
-        # Calculate remaining time
         remaining_time = expiry_time - datetime.datetime.now()
         return remaining_time
 
@@ -337,5 +330,5 @@ class Database:
         return user.get('save', False) 
     
 
-db = Database(USER_DB_URI, DATABASE_NAME)
+db = Database(info.USER_DB_URI, info.DATABASE_NAME) # Access from info
 
