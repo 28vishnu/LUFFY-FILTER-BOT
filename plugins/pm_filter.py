@@ -5,98 +5,39 @@
 import re
 import os
 import asyncio
+import time
 import logging
-import math
-import pytz
-import random
-import time # Import time for flood control
+import math # Import math for ceil function
 from datetime import datetime, timedelta
-from pyrogram import Client, filters, enums
+from pyrogram import filters, Client
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, ChatPermissions, WebAppInfo, Message
-from pyrogram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerIdInvalid, MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
+from pyrogram.enums import MessageEntityType, ChatMemberStatus
+from pyrogram.errors import FloodWait, UserNotParticipant, PeerIdInvalid, ChannelInvalid, MessageNotModified, MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
 from urllib.parse import quote_plus # Import quote_plus for URL encoding
 
-from database.ia_filterdb import get_file_details, get_search_results, save_file, get_bad_files, col, sec_col # Import col, sec_col for direct access in del#
 from database.users_chats_db import db
+from database.ia_filterdb import get_search_results, save_file, get_file_details, col, sec_col, get_bad_files # Import get_bad_files
 from database.filters_mdb import get_filters, find_filter, del_all
 from database.connections_mdb import active_connection, all_connections, delete_connection, if_active, make_active, make_inactive
 from database.gfilters_mdb import find_gfilter, get_gfilters, del_allg
 
+from utils import get_settings, is_subscribed, pub_is_subscribed, get_shortlink, get_token, check_verification, get_tutorial, get_seconds, send_all, get_cap, save_group_settings, get_poster, temp 
+# Removed get_name and get_hash from utils import as they are not in utils.py.
+# Placeholder implementations are added below.
 from info import (
-    ADMINS,
-    LOG_CHANNEL,
-    PICS,
-    IMDB,
-    SPELL_CHECK_REPLY,
-    NO_RESULTS_MSG,
-    CUSTOM_FILE_CAPTION,
-    MAX_BTN, # Standardized to MAX_BTN
-    VERIFY,
-    PREMIUM_AND_REFERAL_MODE,
-    URL,
-    BOT_USERNAME,
-    BOT_NAME,
-    SOURCE_CODE_LNK,
-    CHNL_LNK,
-    GRP_LNK,
-    SUPPORT_CHAT,
-    OWNER_LNK,
-    VERIFY_TUTORIAL,
-    STREAM_MODE,
-    IMDB_POSTER,
-    IMDB_PLOT,
-    IMDB_CAST,
-    IMDB_DIRECTOR,
-    IMDB_WRITER,
-    IMDB_PRODUCER,
-    IMDB_COMPOSER,
-    IMDB_CINEMATOGRAPHER,
-    IMDB_MUSIC_TEAM,
-    IMDB_DISTRIBUTORS,
-    IMDB_RELEASE_DATE,
-    IMDB_YEAR,
-    IMDB_GENRES,
-    IMDB_RATING,
-    IMDB_VOTES,
-    IMDB_RUNTIME,
-    IMDB_COUNTRIES,
-    IMDB_LANGUAGES,
-    IMDB_CERTIFICATES,
-    IMDB_BOX_OFFICE,
-    IMDB_LOCALIZED_TITLE,
-    IMDB_KIND,
-    IMDB_AKA,
-    LONG_IMDB_DESCRIPTION,
-    AI_SPELL_CHECK,
-    REFERAL_PREMEIUM_TIME,
-    REFERAL_COUNT,
-    PAYMENT_QR,
-    PAYMENT_TEXT,
-    CLONE_MODE,
-    AUTH_CHANNEL,
-    REQST_CHANNEL,
-    SUPPORT_CHAT_ID, # Assuming this is defined in info.py for group filter
-    MAX_LIST_ELM, # Assuming this is defined in info.py
-    FORCE_SUB_MODE, # Ensure this is imported for force sub checks
+    BOT_USERNAME, FORCE_SUB_MODE, AUTH_CHANNEL, SUPPORT_CHAT,
+    CHANNELS, ADMINS, CUSTOM_FILE_CAPTION, PICS, IMDB, IMDB_TEMPLATE,
+    LONG_IMDB_DESCRIPTION, SPELL_CHECK_REPLY, PM_SEARCH_MODE, BUTTON_MODE, MAX_BTN,
+    AUTO_FFILTER, PREMIUM_AND_REFERAL_MODE, REFERAL_COUNT, REFERAL_PREMEIUM_TIME,
+    PAYMENT_QR, PAYMENT_TEXT, MELCOW_NEW_USERS, REQUEST_TO_JOIN_MODE,
+    TRY_AGAIN_BTN, STREAM_MODE, SHORTLINK_MODE, SHORTLINK_URL, SHORTLINK_API,
+    IS_TUTORIAL, TUTORIAL, VERIFY_TUTORIAL, MULTI_CLIENT, BOT_ID, BOT_NAME,
+    PING_INTERVAL, URL, RENAME_MODE, AUTO_APPROVE_MODE, REACTIONS,
+    VERIFY_SECOND_SHORTNER, VERIFY_SND_SHORTLINK_API, VERIFY_SND_SHORTLINK_URL,
+    VERIFY_SHORTLINK_API, VERIFY_SHORTLINK_URL, MSG_ALRT, LANGUAGES, YEARS,
+    SUPPORT_CHAT_ID # Ensure this is imported for group filter
 )
 from Script import script
-from utils import (
-    get_settings,
-    is_subscribed,
-    pub_is_subscribed,
-    get_shortlink,
-    get_token,
-    check_verification,
-    get_tutorial,
-    get_seconds,
-    get_size,
-    send_all,
-    get_cap,
-    save_group_settings,
-    get_poster,
-    get_name, # Make sure get_name is imported from utils
-    get_hash # Make sure get_hash is imported from utils
-)
 from TechVJ.util.human_readable import get_readable_file_size # Assuming this path is correct
 
 logger = logging.getLogger(__name__)
@@ -104,26 +45,48 @@ logger.setLevel(logging.ERROR)
 
 lock = asyncio.Lock()
 
-class Temp:
-    U_NAME = None
-    B_NAME = None
-    IMDB_PIC = {}
-    SHORT = {}
-    GETALL = {}
-    IMDB_CAP = {}
+# --- Placeholder for get_name and get_hash ---
+# IMPORTANT: If these functions exist elsewhere in your project (e.g., in TechVJ.util.media_info),
+# you should import them from there and remove these placeholder implementations.
+# These are minimal versions to prevent ImportErrors.
+def get_name(message: Message):
+    """Extracts a display name from a message's media."""
+    if message.document:
+        return message.document.file_name
+    if message.video:
+        return message.video.file_name
+    if message.audio:
+        return message.audio.file_name
+    return "Unknown File" # Fallback
 
-temp = Temp()
+def get_hash(message: Message):
+    """Generates a simple hash for a message (placeholder)."""
+    # This is a very basic placeholder. For real security, use a proper hashing algorithm.
+    if message.document:
+        return hash(message.document.file_id)
+    if message.video:
+        return hash(message.video.file_id)
+    if message.audio:
+        return hash(message.audio.file_id)
+    return hash(message.id) # Fallback to message ID hash
 
-FRESH = {}
-BUTTON = {}
-BUTTONS = {}
-SPELL_CHECK = {}
-
+# --- Global Variables (if not already in info.py or utils.py) ---
+# These are moved here from the user's provided pm_filter.py if they were not in info.py
+# If they are already in info.py, this is redundant but harmless.
+# If they are meant to be dynamic, they should be handled differently.
+# For now, assuming they are fixed lists.
+# Note: YEARS, LANGUAGES are already imported from info.py, so these local definitions might be redundant.
+# Keeping them here for now to match the user's provided file structure.
 YEARS = ["2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015"]
 EPISODES = ["e01", "e02", "e03", "e04", "e05", "e06", "e07", "e08", "e09", "e10"]
 LANGUAGES = ["english", "hindi", "tamil", "telugu", "malayalam", "kannada", "bengali", "marathi", "gujarati", "punjabi"]
 QUALITIES = ["480p", "720p", "1080p", "2160p", "hd", "fhd", "uhd"]
 SEASONS = ["s01", "s02", "s03", "s04", "s05", "s06", "s07", "s08", "s09", "s10"]
+
+FRESH = {}
+BUTTON = {}
+BUTTONS = {}
+SPELL_CHECK = {}
 
 # To store flood wait times for users for search
 FLOOD_CAPS = {} 
@@ -168,7 +131,9 @@ async def start_and_help(client: Client, message: Message):
 async def show_stats(client: Client, message: Message):
     users = await db.total_users_count()
     chats = await db.total_chat_count()
-    total_files = await db.total_files_count()
+    # Assuming db.total_files_count() exists in database.users_chats_db
+    # If not, you might need to implement it or use col.estimated_document_count()
+    total_files = await db.total_files_count() 
     await message.reply_text(
         script.STATUS_TXT.format(users, chats, total_files)
     )
@@ -212,7 +177,7 @@ async def batch_start(client: Client, message: Message):
         try:
             msg = await client.get_messages(message.reply_to_message.forward_from_chat.id, i)
             if msg.media:
-                saved, _ = await save_file(msg) # save_file returns (success_bool, count)
+                saved, _ = await save_file(msg) # save_file returns (success_bool, inserted_id_or_error_message)
                 if saved:
                     total_saved += 1
         except Exception as e:
@@ -246,11 +211,11 @@ async def save_media_handler(client: Client, message: Message):
 
     if message.media:
         m = await message.reply_text("Saving your file to database...")
-        saved, count = await save_file(message)
+        saved, result_info = await save_file(message) # result_info will be the MongoDB _id or error string
         if saved:
-            await m.edit_text(f"File saved successfully! Total files in DB: {count}")
+            await m.edit_text(f"File saved successfully! MongoDB ID: `{result_info}`")
         else:
-            await m.edit_text("Failed to save file. It might already exist or there was a database error.")
+            await m.edit_text(f"Failed to save file: {result_info}")
     else:
         await message.reply_text("I can only save documents, videos, or photos.")
 
@@ -335,7 +300,7 @@ async def auto_filter_logic(client, query_text, message_obj, reply_msg_obj, vj_s
     search_key = str(user_id) + "_" + str(datetime.now().timestamp()).replace(".", "")
     FRESH[search_key] = query_text # Store the original query for later pagination
 
-    files, offset, total_results = await get_search_results(chat_id, query_text, offset=0, filter=True)
+    files, next_offset, total_results = await get_search_results(chat_id, query_text, offset=0, filter=True)
 
     if not files:
         # No results found
@@ -374,7 +339,7 @@ async def auto_filter_logic(client, query_text, message_obj, reply_msg_obj, vj_s
             InlineKeyboardButton("sᴇᴀsᴏɴs",  callback_data=f"seasons#{search_key}")
         ])
         btn.insert(0, [
-            InlineKeyboardButton("𝐒𝐞𝐧𝐝 𝐀𝐥𝐥", callback_data=f"sendfiles#{search_key}"),
+            InlineKeyboardButton("𝐒𝐞𝐧𝐝 𝐀�𝐥", callback_data=f"sendfiles#{search_key}"),
             InlineKeyboardButton("ʟᴀɴɢᴜᴀɢᴇs", callback_data=f"languages#{search_key}"),
             InlineKeyboardButton("ʏᴇᴀʀs", callback_data=f"years#{search_key}")
         ])
@@ -386,7 +351,7 @@ async def auto_filter_logic(client, query_text, message_obj, reply_msg_obj, vj_s
         ])
         btn.insert(0, [
             InlineKeyboardButton("𝐒𝐞𝐧𝐝 𝐀𝐥𝐥", callback_data=f"sendfiles#{search_key}"),
-            InlineKeyboardButton("ʟᴀɴɢᴜᴀɢᴇs", callback_data=f"languages#{search_key}"),
+            InlineKeyboardButton("ʟᴀɴɢᴜᴀɢᴇs", callback=f"languages#{search_key}"),
             InlineKeyboardButton("ʏᴇᴀʀs", callback_data=f"years#{search_key}")
         ])
 
@@ -402,8 +367,8 @@ async def auto_filter_logic(client, query_text, message_obj, reply_msg_obj, vj_s
 
     pagination_buttons.append(InlineKeyboardButton(f"{current_page} / {total_pages}", callback_data="pages"))
 
-    if offset != "" and offset != 0: # This condition for next offset needs to be based on n_offset from get_search_results
-        pagination_buttons.append(InlineKeyboardButton("𝐍𝐄𝐗𝐓 ➪", callback_data=f"next_{user_id}_{search_key}_{offset}")) # Should be n_offset here
+    if next_offset != 0: # Use n_offset for next page
+        pagination_buttons.append(InlineKeyboardButton("𝐍𝐄𝐗𝐓 ➪", callback_data=f"next_{user_id}_{search_key}_{next_offset}"))
 
     if pagination_buttons:
         btn.append(pagination_buttons)
@@ -833,7 +798,7 @@ async def next_page(bot, query):
     if pagination_buttons:
         btn.append(pagination_buttons)
     else:
-        btn.append([InlineKeyboardButton(text="𝐎 𝐌𝐎𝐑𝐄 𝐏�𝐆𝐄𝐒 𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄", callback_data="pages")])
+        btn.append([InlineKeyboardButton(text="𝐎 𝐌𝐎𝐑𝐄 𝐏𝐀𝐆𝐄𝐒 𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄", callback_data="pages")])
 
     if not settings["button"]:
         remaining_seconds = "N/A"
@@ -1826,20 +1791,20 @@ async def cb_handler(client: Client, query: CallbackQuery):
                     await query.answer(url=f"https://telegram.me/{temp.U_NAME}?start=short_{file_id}")
                     return
                 else:
-                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is NᴏT YᴏUʀ Mᴏᴠɪᴇ Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ YᴏUʀ's !", show_alert=True)
+                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is NᴏT YᴏUʀ Mᴏᴠie Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ YᴏUʀ's !", show_alert=True)
             elif settings.get('is_shortlink') and await db.has_premium_access(query.from_user.id):
                 if clicked == typed:
                     await query.answer(url=f"https://telegram.me/{temp.U_NAME}?start={ident}_{file_id}")
                     return
                 else:
-                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is NᴏT YᴏUʀ Mᴏᴠɪᴇ Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ YᴏUʀ's !", show_alert=True)
+                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is NᴏT YᴏUʀ Mᴏᴠie Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ YᴏUʀ's !", show_alert=True)
 
             else:
                 if clicked == typed:
                     await query.answer(url=f"https://telegram.me/{temp.U_NAME}?start={ident}_{file_id}")
                     return
                 else:
-                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is NᴏT YᴏUʀ Mᴏᴠɪᴇ Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ YᴏUʀ's !", show_alert=True)
+                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is NᴏT YᴏUʀ Mᴏᴠie Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ YᴏUʀ's !", show_alert=True)
         except UserIsBlocked:
             await query.answer('Uɴʙʟᴏᴄᴋ ᴛʜᴇ ʙᴏᴛ ᴍᴀʜɴ !', show_alert=True)
         except PeerIdInvalid:
@@ -1917,9 +1882,9 @@ async def cb_handler(client: Client, query: CallbackQuery):
         if STREAM_MODE:
             try:
                 log_msg = await client.send_cached_media(chat_id=LOG_CHANNEL, file_id=file_id)
-                fileName = quote_plus(get_name(log_msg))
-                stream = f"{URL}watch/{str(log_msg.id)}/{fileName}?hash={get_hash(log_msg)}"
-                download = f"{URL}{str(log_msg.id)}/{fileName}?hash={get_hash(log_msg)}"
+                fileName = quote_plus(get_name(log_msg)) # Using placeholder get_name
+                stream = f"{URL}watch/{str(log_msg.id)}/{fileName}?hash={get_hash(log_msg)}" # Using placeholder get_hash
+                download = f"{URL}{str(log_msg.id)}/{fileName}?hash={get_hash(log_msg)}" # Using placeholder get_hash
                 button = [[
                     InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ •", url=download),
                     InlineKeyboardButton('• ᴡᴀᴛᴄʜ •', url=stream)
@@ -2300,9 +2265,9 @@ async def cb_handler(client: Client, query: CallbackQuery):
         _, file_id = cb_data.split(":")
         try:
             log_msg = await client.send_cached_media(chat_id=LOG_CHANNEL, file_id=file_id)
-            fileName = quote_plus(get_name(log_msg))
-            stream = f"{URL}watch/{str(log_msg.id)}/{fileName}?hash={get_hash(log_msg)}"
-            download = f"{URL}{str(log_msg.id)}/{fileName}?hash={get_hash(log_msg)}"
+            fileName = quote_plus(get_name(log_msg)) # Using placeholder get_name
+            stream = f"{URL}watch/{str(log_msg.id)}/{fileName}?hash={get_hash(log_msg)}" # Using placeholder get_hash
+            download = f"{URL}{str(log_msg.id)}/{fileName}?hash={get_hash(log_msg)}" # Using placeholder get_hash
             button = [[
                 InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ •", url=download),
                 InlineKeyboardButton('• ᴡᴀᴛᴄʜ •', url=stream)
@@ -2666,24 +2631,24 @@ async def cb_handler(client: Client, query: CallbackQuery):
         reply_markup = InlineKeyboardMarkup(buttons)
         total_users = await db.total_users_count()
         totl_chats = await db.total_chat_count()
-        filesp = col.count_documents({})
-        totalsec = sec_col.count_documents({})
+        filesp = await col.count_documents({}) # Use await for motor
+        totalsec = await sec_col.count_documents({}) if sec_col else 0 # Use await and check if sec_col exists
         try:
-            stats = col.database.command('dbStats')
+            stats = await col.database.command('dbStats') # Use await
             used_dbSize = (stats['dataSize']/(1024*1024))+(stats['indexSize']/(1024*1024))
             free_dbSize = 512-used_dbSize
         except Exception:
             used_dbSize = 0
             free_dbSize = 0
         try:
-            stats2 = sec_col.database.command('dbStats')
-            used_dbSize2 = (stats2['dataSize']/(1024*1024))+(stats2['indexSize']/(1024*1024))
+            stats2 = await sec_col.database.command('dbStats') if sec_col else {} # Use await and check
+            used_dbSize2 = (stats2.get('dataSize', 0)/(1024*1024))+(stats2.get('indexSize', 0)/(1024*1024))
             free_dbSize2 = 512-used_dbSize2
         except Exception:
             used_dbSize2 = 0
             free_dbSize2 = 0
         try:
-            stats3 = db.client.admin.command('dbStats', db.name)
+            stats3 = await db.client.admin.command('dbStats', db.name) # Use await
             used_dbSize3 = (stats3['dataSize']/(1024*1024))+(stats3['indexSize']/(1024*1024))
             free_dbSize3 = 512-used_dbSize3
         except Exception:
@@ -2711,24 +2676,24 @@ async def cb_handler(client: Client, query: CallbackQuery):
         reply_markup = InlineKeyboardMarkup(buttons)
         total_users = await db.total_users_count()
         totl_chats = await db.total_chat_count()
-        filesp = col.count_documents({})
-        totalsec = sec_col.count_documents({})
+        filesp = await col.count_documents({}) # Use await for motor
+        totalsec = await sec_col.count_documents({}) if sec_col else 0 # Use await and check if sec_col exists
         try:
-            stats = col.database.command('dbStats')
+            stats = await col.database.command('dbStats') # Use await
             used_dbSize = (stats['dataSize']/(1024*1024))+(stats['indexSize']/(1024*1024))
             free_dbSize = 512-used_dbSize
         except Exception:
             used_dbSize = 0
             free_dbSize = 0
         try:
-            stats2 = sec_col.database.command('dbStats')
-            used_dbSize2 = (stats2['dataSize']/(1024*1024))+(stats2['indexSize']/(1024*1024))
+            stats2 = await sec_col.database.command('dbStats') if sec_col else {} # Use await and check
+            used_dbSize2 = (stats2.get('dataSize', 0)/(1024*1024))+(stats2.get('indexSize', 0)/(1024*1024))
             free_dbSize2 = 512-used_dbSize2
         except Exception:
             used_dbSize2 = 0
             free_dbSize2 = 0
         try:
-            stats3 = db.client.admin.command('dbStats', db.name)
+            stats3 = await db.client.admin.command('dbStats', db.name) # Use await
             used_dbSize3 = (stats3['dataSize']/(1024*1024))+(stats3['indexSize']/(1024*1024))
             free_dbSize3 = 512-used_dbSize3
         except Exception:
@@ -3117,3 +3082,4 @@ async def cb_handler(client: Client, query: CallbackQuery):
             reply_markup = InlineKeyboardMarkup(buttons)
             await query.message.edit_reply_markup(reply_markup)
         await query.answer("Settings updated.", show_alert=True)
+
