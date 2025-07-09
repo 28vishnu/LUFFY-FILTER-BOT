@@ -23,7 +23,7 @@ from pyrogram.errors import FloodWait # Import FloodWait specifically
 from database.users_chats_db import db
 # Explicitly import necessary variables from info
 from info import (
-    LOG_CHANNEL, CHANNELS, AUTH_CHANNEL, CLONE_MODE, ON_HEROKU, PORT,
+    LOG_CHANNEL, CHANNELS, AUTH_CHANNEL, CLONE_MODE, ON_HEROKU, PORT, # Ensure PORT is imported
     API_ID, API_HASH, BOT_TOKEN, PICS, ADMINS, AUTH_USERS, REQST_CHANNEL,
     INDEX_REQ_CHANNEL, FILE_STORE_CHANNEL, DELETE_CHANNELS, SUPPORT_CHAT,
     OWNER_LNK, CHNL_LNK, GRP_LNK, VERIFY, BOT_USERNAME, BOT_NAME, BOT_ID,
@@ -57,15 +57,26 @@ from TechVJ.bot import TechVJBot # This imports the TechVJBot client instance
 from TechVJ.util.keepalive import ping_server
 from TechVJ.bot.clients import initialize_clients
 
-# --- IMPORTANT ---
-# The `sleep_threshold` parameter for the Pyrogram Client should be set
+# --- CRITICAL IMPORTANT REMINDER ---
+# The `sleep_threshold` parameter for the Pyrogram Client MUST be set
 # where `TechVJBot` is actually initialized (likely in TechVJ/bot.py).
-# Ensure that file includes:
+# This is the primary way to handle FloodWait errors effectively.
+#
+# Ensure that file (e.g., TechVJ/bot.py) includes:
+#
+# from pyrogram import Client
+# from info import API_ID, API_HASH, BOT_TOKEN, SLEEP_THRESHOLD # Make sure SLEEP_THRESHOLD is imported here
+#
 # TechVJBot = Client(
-#     ...,
-#     sleep_threshold=SLEEP_THRESHOLD # Import SLEEP_THRESHOLD from info.py there
+#     "TechVJBot",
+#     api_id=API_ID,
+#     api_hash=API_HASH,
+#     bot_token=BOT_TOKEN,
+#     plugins=dict(root="plugins"), # Adjust if your plugins path is different
+#     sleep_threshold=SLEEP_THRESHOLD # <--- THIS LINE IS ABSOLUTELY ESSENTIAL
+#     # Add any other parameters your Client initialization might have
 # )
-# --- IMPORTANT ---
+# --- END CRITICAL IMPORTANT REMINDER ---
 
 ppath = "plugins/*.py"
 files = glob.glob(ppath)
@@ -160,7 +171,8 @@ async def start():
     app = web.AppRunner(await web_server())
     await app.setup()
     bind_address = "0.0.0.0"
-    await web.TCPSite(app, bind_address, PORT).start()
+    # Use the PORT environment variable provided by Render
+    await web.TCPSite(app, bind_address, PORT).start() # <--- IMPORTANT: Ensure PORT is used here
 
     # Keep the bot running indefinitely
     await idle()
