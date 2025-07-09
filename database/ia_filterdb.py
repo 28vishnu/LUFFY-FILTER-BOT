@@ -5,7 +5,8 @@
 import re, base64, json
 from struct import pack
 from pyrogram.file_id import FileId, FileType
-from pymongo import MongoClient, ASCENDING
+from motor.motor_asyncio import AsyncIOMotorClient # Import AsyncIOMotorClient
+from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError, OperationFailure
 from bson.objectid import ObjectId # Import ObjectId for querying by _id
 import asyncio
@@ -16,7 +17,8 @@ from info import FILE_DB_URI, SEC_FILE_DB_URI, DATABASE_NAME, COLLECTION_NAME, M
 logger = logging.getLogger(__name__)
 
 # First Database For File Saving 
-client = MongoClient(FILE_DB_URI)
+# Use AsyncIOMotorClient for asynchronous operations
+client = AsyncIOMotorClient(FILE_DB_URI)
 db = client[DATABASE_NAME]
 col = db[COLLECTION_NAME]
 
@@ -25,7 +27,7 @@ sec_client = None
 sec_db = None
 sec_col = None
 if MULTIPLE_DATABASE:
-    sec_client = MongoClient(SEC_FILE_DB_URI)
+    sec_client = AsyncIOMotorClient(SEC_FILE_DB_URI)
     sec_db = sec_client[DATABASE_NAME]
     sec_col = sec_db[COLLECTION_NAME]
 
@@ -34,7 +36,7 @@ async def ensure_indexes():
     """Ensures necessary indexes are created on the collections."""
     try:
         # Create text index for file_name for search functionality
-        col.create_index([("file_name", "text")], name="file_name_text_index", background=True)
+        await col.create_index([("file_name", "text")], name="file_name_text_index", background=True)
         logger.info("Text index 'file_name_text_index' created on primary collection.")
     except OperationFailure as e:
         logger.warning(f"Failed to create text index on primary collection: {e}")
@@ -45,7 +47,7 @@ async def ensure_indexes():
         # Create unique index on file_id to prevent duplicates
         # Use background=True to build in the background without blocking
         # Use sparse=True so that documents without 'file_id' field are not indexed
-        col.create_index([("file_id", ASCENDING)], unique=True, background=True, sparse=True)
+        await col.create_index([("file_id", ASCENDING)], unique=True, background=True, sparse=True)
         logger.info("Unique index 'file_id_1' created on primary collection.")
     except OperationFailure as e:
         # This will catch if the index already exists or if there are duplicates preventing creation
@@ -56,7 +58,7 @@ async def ensure_indexes():
 
     if MULTIPLE_DATABASE and sec_col:
         try:
-            sec_col.create_index([("file_name", "text")], name="sec_file_name_text_index", background=True)
+            await sec_col.create_index([("file_name", "text")], name="sec_file_name_text_index", background=True)
             logger.info("Text index 'sec_file_name_text_index' created on secondary collection.")
         except OperationFailure as e:
             logger.warning(f"Failed to create text index on secondary collection: {e}")
@@ -64,7 +66,7 @@ async def ensure_indexes():
             logger.error(f"Unexpected error creating text index on secondary collection: {e}")
 
         try:
-            sec_col.create_index([("file_id", ASCENDING)], unique=True, background=True, sparse=True)
+            await sec_col.create_index([("file_id", ASCENDING)], unique=True, background=True, sparse=True)
             logger.info("Unique index 'file_id_1' created on secondary collection.")
         except OperationFailure as e:
             logger.warning(f"Failed to create unique index on secondary collection 'file_id_1': {e}. "
@@ -87,13 +89,8 @@ async def remove_duplicate_files():
 
     duplicates = []
     try:
-        # Use col.aggregate for asynchronous aggregation
-        # Note: PyMongo's async operations require an async driver (like motor)
-        # If you're using pymongo directly, you might need to run this in a thread pool
-        # For simplicity, assuming motor or a compatible async setup here.
-        # If you are using synchronous pymongo, this part needs adjustment.
-        async for doc in col.aggregate(pipeline): # This line assumes async pymongo/motor
-            duplicates.append(doc)
+        # Use .to_list(length=None) to fetch all results from the async cursor
+        duplicates = await col.aggregate(pipeline).to_list(length=None)
     except Exception as e:
         logger.error(f"Error during aggregation to find duplicates: {e}")
         return
@@ -106,7 +103,7 @@ async def remove_duplicate_files():
         
         if ids_to_delete:
             try:
-                result = await col.delete_many({"_id": {"$in": ids_to_delete}}) # Assumes async delete_many
+                result = await col.delete_many({"_id": {"$in": ids_to_delete}})
                 deleted_count += result.deleted_count
                 logger.info(f"Removed {result.deleted_count} duplicates for file_id: {file_id}")
             except Exception as e:
@@ -118,8 +115,7 @@ async def remove_duplicate_files():
         logger.info("Starting duplicate file cleanup on secondary collection...")
         duplicates_sec = []
         try:
-            async for doc in sec_col.aggregate(pipeline): # Assumes async pymongo/motor
-                duplicates_sec.append(doc)
+            duplicates_sec = await sec_col.aggregate(pipeline).to_list(length=None)
         except Exception as e:
             logger.error(f"Error during aggregation to find duplicates in secondary collection: {e}")
             return
@@ -130,7 +126,7 @@ async def remove_duplicate_files():
             ids_to_delete = doc["dups"][1:]
             if ids_to_delete:
                 try:
-                    result = await sec_col.delete_many({"_id": {"$in": ids_to_delete}}) # Assumes async delete_many
+                    result = await sec_col.delete_many({"_id": {"$in": ids_to_delete}})
                     deleted_count_sec += result.deleted_count
                     logger.info(f"Removed {result.deleted_count} duplicates from secondary for file_id: {file_id}")
                 except Exception as e:
@@ -216,7 +212,7 @@ async def save_file(media) -> (bool, str):
 
     try:
         # Attempt to insert. DuplicateKeyError will be raised if file_id already exists
-        result = await col.insert_one(file_data) # Assumes async insert_one
+        result = await col.insert_one(file_data)
         logger.info(f"Successfully saved: {file_name} with MongoDB _id: {result.inserted_id}")
         return True, str(result.inserted_id) # Return the MongoDB _id
     except DuplicateKeyError:
@@ -240,14 +236,14 @@ async def get_search_results(query: str, limit: int = 20) -> list:
 
     files = []
     # Search in primary collection
-    primary_files = await col.find(filter_criteria).limit(limit).to_list(length=None) # Assumes async find
+    primary_files = await col.find(filter_criteria).to_list(length=limit)
     files.extend(primary_files)
 
     # If MULTIPLE_DATABASE is enabled, search in secondary collection as well
     if MULTIPLE_DATABASE and sec_col:
         remaining_limit = limit - len(files)
         if remaining_limit > 0:
-            secondary_files = await sec_col.find(filter_criteria).limit(remaining_limit).to_list(length=None) # Assumes async find
+            secondary_files = await sec_col.find(filter_criteria).to_list(length=remaining_limit)
             files.extend(secondary_files)
     
     # Sort results by relevance if possible (text search provides score)
@@ -267,10 +263,19 @@ async def get_file_details(file_db_id: str) -> dict:
         logger.error(f"Invalid ObjectId format: {file_db_id}")
         return None # Invalid ObjectId format
 
-    file = await col.find_one({'_id': obj_id}) # Assumes async find_one
+    file = await col.find_one({'_id': obj_id})
     if not file and MULTIPLE_DATABASE and sec_col:
-        file = await sec_col.find_one({'_id': obj_id}) # Assumes async find_one
+        file = await sec_col.find_one({'_id': obj_id})
     return file
+
+async def get_bad_files():
+    """
+    Placeholder function for getting bad files.
+    Implement your logic to retrieve blacklisted/bad files here.
+    """
+    logger.info("Retrieving bad files (placeholder function).")
+    # Example: return await col.find({"is_bad": True}).to_list(length=None)
+    return []
 
 
 # Helper functions for file_id encoding/decoding (if still needed for old file_ids)
