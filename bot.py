@@ -6,6 +6,8 @@
 
 import sys, glob, importlib, logging, logging.config, pytz, asyncio
 from pathlib import Path
+from datetime import date, datetime
+from aiohttp import web
 
 # Get logging configurations
 logging.config.fileConfig('logging.conf')
@@ -40,31 +42,44 @@ from info import (
     YEARS # Ensure YEARS is imported
 )
 from utils import temp
-from typing import Union, Optional, AsyncGenerator
-from Script import script 
-from datetime import date, datetime 
-from aiohttp import web
+from Script import script
 from plugins import web_server
 from plugins.clone import restart_bots
 
 # Assuming TechVJ is a package/directory at the same level as bot.py and plugins
 # If TechVJ.bot or TechVJ.util.keepalive do not exist, these imports will fail.
 # Based on the user's traceback, it seems TechVJ is a valid path.
-from TechVJ.bot import TechVJBot
+from TechVJ.bot import TechVJBot # This imports the TechVJBot client instance
 from TechVJ.util.keepalive import ping_server
 from TechVJ.bot.clients import initialize_clients
 
+# --- IMPORTANT ---
+# The `sleep_threshold` parameter for the Pyrogram Client should be set
+# where `TechVJBot` is actually initialized (likely in TechVJ/bot.py).
+# Ensure that file includes:
+# TechVJBot = Client(
+#     ...,
+#     sleep_threshold=SLEEP_THRESHOLD # Import SLEEP_THRESHOLD from info.py there
+# )
+# --- IMPORTANT ---
+
 ppath = "plugins/*.py"
 files = glob.glob(ppath)
-TechVJBot.start()
 loop = asyncio.get_event_loop()
 
 
 async def start():
     print('\n')
     print('Initalizing Your Bot')
-    bot_info = await TechVJBot.get_me()
+
+    # Start the bot client
+    await TechVJBot.start()
+    logger.info("Bot started successfully!")
+
+    # Initialize other clients (if any, from TechVJ.bot.clients)
     await initialize_clients()
+
+    # Load plugins dynamically
     for name in files:
         with open(name) as a:
             patt = Path(a.name)
@@ -76,17 +91,25 @@ async def start():
             spec.loader.exec_module(load)
             sys.modules["plugins." + plugin_name] = load
             print("Tech VJ Imported => " + plugin_name)
+
+    # Start ping server if on Heroku
     if ON_HEROKU:
         asyncio.create_task(ping_server())
+
+    # Load banned users and chats
     b_users, b_chats = await db.get_banned()
     temp.BANNED_USERS = b_users
     temp.BANNED_CHATS = b_chats
+
+    # Fetch bot's info and store in temp
     me = await TechVJBot.get_me()
     temp.BOT = TechVJBot
     temp.ME = me.id
     temp.U_NAME = me.username
     temp.B_NAME = me.first_name
     logging.info(script.LOGO)
+
+    # Send restart messages
     tz = pytz.timezone('Asia/Kolkata')
     today = date.today()
     now = datetime.now(tz)
@@ -96,6 +119,7 @@ async def start():
     except Exception as e:
         print(f"Error sending restart message to LOG_CHANNEL: {e}")
         print("Make Your Bot Admin In Log Channel With Full Rights")
+
     for ch in CHANNELS:
         try:
             k = await TechVJBot.send_message(chat_id=ch, text="**Bot Restarted**")
@@ -103,20 +127,27 @@ async def start():
         except Exception as e:
             print(f"Error sending restart message to CHANNELS: {e}")
             print("Make Your Bot Admin In File Channels With Full Rights")
+
     try:
         k = await TechVJBot.send_message(chat_id=AUTH_CHANNEL, text="**Bot Restarted**")
         await k.delete()
     except Exception as e:
         print(f"Error sending restart message to AUTH_CHANNEL: {e}")
         print("Make Your Bot Admin In Force Subscribe Channel With Full Rights")
+
+    # Restart clone bots if enabled
     if CLONE_MODE == True:
         print("Restarting All Clone Bots.......\n")
         await restart_bots()
         print("Restarted All Clone Bots.\n")
+
+    # Start web server
     app = web.AppRunner(await web_server())
     await app.setup()
     bind_address = "0.0.0.0"
     await web.TCPSite(app, bind_address, PORT).start()
+
+    # Keep the bot running indefinitely
     await idle()
 
 
@@ -125,3 +156,5 @@ if __name__ == '__main__':
         loop.run_until_complete(start())
     except KeyboardInterrupt:
         logging.info('Service Stopped Bye 👋')
+    except Exception as e:
+        logging.exception(f"An unhandled error occurred in main execution: {e}")
