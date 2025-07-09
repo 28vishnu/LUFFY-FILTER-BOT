@@ -21,8 +21,8 @@ hachoir
 python-decouple
 ffmpeg
 youtube_search
-pymongo  # Removed version constraint
-motor    # Removed version constraint
+pymongo
+motor
 marshmallow==3.14.1
 umongo==3.0.1
 PyLeaves==1.0.2
