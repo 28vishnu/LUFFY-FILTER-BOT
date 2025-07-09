@@ -909,7 +909,7 @@ async def requests(bot, message):
                     InlineKeyboardButton('View Request', url=f"{message.reply_to_message.link}"),
                     InlineKeyboardButton('Show Options', callback_data=f'show_option#{reporter}')
                 ]]
-                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾�𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
+                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
                 success = True
             elif len(content) >= 3:
                 for admin in ADMINS:
@@ -1196,7 +1196,7 @@ async def removetutorial(bot, message):
 async def stop_button(bot, message):
     msg = await bot.send_message(text="**🔄 𝙿𝚁𝙾𝙲𝙴𝚂𝚂𝙴𝚂 𝚂𝚃𝙾𝙿𝙴𝙳. 𝙱𝙾𝚃 𝙸𝚂 𝚁𝙴𝚂𝚃𝙰𝚁𝚃𝙸𝙽𝙶...**", chat_id=message.chat.id)       
     await asyncio.sleep(3)
-    await msg.edit("**✅️ 𝙱𝙾𝚃 𝙸𝚂 𝚁𝙴𝚂𝚃𝙰𝚁𝚃𝙴𝙳. 𝙽𝙾𝚆 𝚈𝙾𝚄 𝙲𝙰𝙽 𝚄𝚂𝙴 𝙼𝙴**")
+    await msg.edit("**✅️ 𝙱𝙾𝚃 𝙸𝚂 𝚁𝙴𝚂𝚃𝙰𝚁𝚃𝙴𝙳. 𝙽�𝚆 𝚈𝙾𝚄 𝙲𝙰𝙽 𝚄𝚂𝙴 𝙼𝙴**")
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 @Client.on_message(filters.command("nofsub"))
@@ -1444,7 +1444,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 reply_markup=reply_markup
             )
             filetype = msg.media
-            file = getattr(msg, filetype.value)
+            file = getattr(msg, file_type.value)
             title = file.file_name
             size=get_size(file.file_size)
             f_caption = f"<code>{title}</code>"
@@ -1872,11 +1872,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
             [
                 InlineKeyboardButton(
                     'ShortLink',
-                    callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{grp_id}',
+                    callback_data=f'setgs#is_shortlink#{str(settings["is_shortlink"])}#{grp_id}', # Changed here
                 ),
                 InlineKeyboardButton(
                     '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                    callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{grp_id}',
+                    callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{grp_id}', # Changed here
                 ),
             ],
         ]
@@ -1975,11 +1975,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
             [
                 InlineKeyboardButton(
                     'ShortLink',
-                    callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{grp_id}',
+                    callback_data=f'setgs#is_shortlink#{str(settings["is_shortlink"])}#{grp_id}',
                 ),
                 InlineKeyboardButton(
                     '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                    callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{grp_id}',
+                    callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{grp_id}',
                 ),
             ],
         ]
