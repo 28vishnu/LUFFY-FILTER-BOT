@@ -212,7 +212,7 @@ if __name__ == '__main__':
         # Use asyncio.run() for proper event loop management
         asyncio.run(start())
     except KeyboardInterrupt:
-        logging.info('Service Stopped Bye 👋')
+        logging.info('Service Stopped Bye �')
     except Exception as e:
         # Log the unhandled exception before exiting
         logger.exception(f"An unhandled error occurred in main execution: {e}")
