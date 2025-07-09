@@ -223,10 +223,11 @@ async def save_file(media) -> (bool, str):
         return False, str(e)
 
 
-async def get_search_results(query: str, limit: int = 20) -> list:
+async def get_search_results(chat_id: int, query: str, offset: int = 0, limit: int = 10, filter: bool = False) -> (list, int, int):
     """
     Searches for files in the database based on the query.
     Uses text index for efficient searching.
+    Returns (files, next_offset, total_results).
     """
     search_query = clean_file_name(query)
     
@@ -234,23 +235,32 @@ async def get_search_results(query: str, limit: int = 20) -> list:
     # The $text operator requires a text index on the collection
     filter_criteria = {"$text": {"$search": search_query}}
 
+    # Get total count first for pagination
+    total_results = await col.count_documents(filter_criteria)
+    if MULTIPLE_DATABASE and sec_col:
+        total_results += await sec_col.count_documents(filter_criteria)
+
     files = []
     # Search in primary collection
-    primary_files = await col.find(filter_criteria).to_list(length=limit)
+    primary_files_cursor = col.find(filter_criteria).skip(offset).limit(limit)
+    primary_files = await primary_files_cursor.to_list(length=limit)
     files.extend(primary_files)
 
     # If MULTIPLE_DATABASE is enabled, search in secondary collection as well
     if MULTIPLE_DATABASE and sec_col:
         remaining_limit = limit - len(files)
         if remaining_limit > 0:
-            secondary_files = await sec_col.find(filter_criteria).to_list(length=remaining_limit)
+            secondary_files_cursor = sec_col.find(filter_criteria).skip(max(0, offset - len(primary_files))).limit(remaining_limit)
+            secondary_files = await secondary_files_cursor.to_list(length=remaining_limit)
             files.extend(secondary_files)
     
     # Sort results by relevance if possible (text search provides score)
     # Or by date, or file_name alphabetically if no score
     files.sort(key=lambda x: x.get('date', 0), reverse=True) # Sort by date descending
 
-    return files
+    next_offset = offset + len(files) if len(files) == limit else 0
+
+    return files, next_offset, total_results
 
 
 async def get_file_details(file_db_id: str) -> dict:
@@ -268,14 +278,25 @@ async def get_file_details(file_db_id: str) -> dict:
         file = await sec_col.find_one({'_id': obj_id})
     return file
 
-async def get_bad_files():
+async def get_bad_files(keyword: str = None):
     """
-    Placeholder function for getting bad files.
-    Implement your logic to retrieve blacklisted/bad files here.
+    Retrieves blacklisted/bad files. If a keyword is provided, filters by that keyword.
     """
-    logger.info("Retrieving bad files (placeholder function).")
-    # Example: return await col.find({"is_bad": True}).to_list(length=None)
-    return []
+    logger.info(f"Retrieving bad files for keyword: {keyword}")
+    if keyword:
+        filter_criteria = {"$text": {"$search": clean_file_name(keyword)}}
+    else:
+        filter_criteria = {"is_bad": True} # Assuming a field 'is_bad' marks bad files
+
+    files = await col.find(filter_criteria).to_list(length=None)
+    total_count = await col.count_documents(filter_criteria)
+
+    if MULTIPLE_DATABASE and sec_col:
+        sec_files = await sec_col.find(filter_criteria).to_list(length=None)
+        files.extend(sec_files)
+        total_count += await sec_col.count_documents(filter_criteria)
+        
+    return files, total_count
 
 
 # Helper functions for file_id encoding/decoding (if still needed for old file_ids)
