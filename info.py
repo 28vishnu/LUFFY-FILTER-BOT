@@ -53,14 +53,14 @@ DELETE_CHANNELS = [int(dch) for dch in environ.get('DELETE_CHANNELS', '0').split
 
 
 # About Bot
-BOT_USERNAME = environ.get('BOT_USERNAME', 'VJ_Filter_Bot')
-BOT_NAME = environ.get('BOT_NAME', 'VJ Filter Bot')
+BOT_USERNAME = environ.get('BOT_USERNAME', 'autofilterrmoviesbot')
+BOT_NAME = environ.get('BOT_NAME', 'ᴄɪɴᴇʙᴏᴛ')
 BOT_ID = int(environ.get('BOT_ID', '0')) # Changed default to '0' to avoid ValueError
 
 
 # Database
 DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://vishnusaketh07:moviesai25@cluster0.bdifagm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0") # Keep as is, you need to provide your MongoDB URI
-DATABASE_NAME = environ.get('DATABASE_NAME', "VJ-Filter-Bot")
+DATABASE_NAME = environ.get('DATABASE_NAME', "Filter-Bot")
 COLLECTION_NAME = environ.get('COLLECTION_NAME', 'Telegram_Files')
 
 # For Multiple Database
