@@ -97,7 +97,7 @@ async def start(client, message):
             await m.delete()
         except Exception as e:
             logger.warning(f"Failed to send sticker: {e}")
-            pass # Continue even if sticker fails
+            pass # Continue even if reaction fails
 
         # Send photo or text based on PICS availability
         try:
@@ -909,7 +909,7 @@ async def requests(bot, message):
                     InlineKeyboardButton('View Request', url=f"{message.reply_to_message.link}"),
                     InlineKeyboardButton('Show Options', callback_data=f'show_option#{reporter}')
                 ]]
-                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾�𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
+                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
                 success = True
             elif len(content) >= 3:
                 for admin in ADMINS:
@@ -944,7 +944,7 @@ async def requests(bot, message):
                     InlineKeyboardButton('View Request', url=f"{message.link}"),
                     InlineKeyboardButton('Show Options', callback_data=f'show_option#{reporter}')
                 ]]
-                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝗍𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
+                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝗍𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺�𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
                 success = True
             elif len(content) >= 3:
                 for admin in ADMINS:
@@ -1322,11 +1322,29 @@ async def plans_cmd_handler(client, message):
         [InlineKeyboardButton("⚠️ ᴄʟᴏsᴇ / ᴅᴇʟᴇᴛᴇ ⚠️", callback_data="close_data")]
     ]
     reply_markup = InlineKeyboardMarkup(btn)
-    await message.reply_photo(
-        photo=PAYMENT_QR,
-        caption=PAYMENT_TEXT,
-        reply_markup=reply_markup
-    )
+    
+    try:
+        if PAYMENT_QR: # Check if PAYMENT_QR is not empty
+            await message.reply_photo(
+                photo=PAYMENT_QR,
+                caption=PAYMENT_TEXT,
+                reply_markup=reply_markup
+            )
+        else:
+            await message.reply_text(
+                text=PAYMENT_TEXT,
+                reply_markup=reply_markup,
+                parse_mode=enums.ParseMode.HTML,
+                disable_web_page_preview=True
+            )
+    except Exception as e:
+        logger.error(f"Error sending payment photo/text in /plan: {e}")
+        await message.reply_text(
+            text=PAYMENT_TEXT,
+            reply_markup=reply_markup,
+            parse_mode=enums.ParseMode.HTML,
+            disable_web_page_preview=True
+        )
         
 @Client.on_message(filters.command("myplan"))
 async def check_plans_cmd(client, message):
@@ -1618,10 +1636,28 @@ async def cb_handler(client: Client, query: CallbackQuery):
             [InlineKeyboardButton("⚠️ ᴄʟᴏsᴇ / ᴅᴇʟᴇᴛᴇ ⚠️", callback_data="close_data")]
         ]
         reply_markup = InlineKeyboardMarkup(buttons)
-        await query.message.edit_media(
-            media=InputMediaPhoto(PAYMENT_QR, caption=PAYMENT_TEXT),
-            reply_markup=reply_markup
-        )
+        
+        try:
+            if PAYMENT_QR: # Check if PAYMENT_QR is not empty
+                await query.message.edit_media(
+                    media=InputMediaPhoto(PAYMENT_QR, caption=PAYMENT_TEXT),
+                    reply_markup=reply_markup
+                )
+            else:
+                await query.message.edit_text(
+                    text=PAYMENT_TEXT,
+                    reply_markup=reply_markup,
+                    parse_mode=enums.ParseMode.HTML,
+                    disable_web_page_preview=True
+                )
+        except Exception as e:
+            logger.error(f"Error sending payment photo/text: {e}")
+            await query.message.edit_text(
+                text=PAYMENT_TEXT,
+                reply_markup=reply_markup,
+                parse_mode=enums.ParseMode.HTML,
+                disable_web_page_preview=True
+            )
     
     elif cb_data == "get_trail":
         if PREMIUM_AND_REFERAL_MODE == False:
@@ -1649,10 +1685,28 @@ async def cb_handler(client: Client, query: CallbackQuery):
             [InlineKeyboardButton("⚠️ ᴄʟᴏsᴇ / ᴅᴇʟᴇᴛᴇ ⚠️", callback_data="close_data")]
         ]
         reply_markup = InlineKeyboardMarkup(buttons)
-        await query.message.edit_media(
-            media=InputMediaPhoto(PAYMENT_QR, caption=PAYMENT_TEXT),
-            reply_markup=reply_markup
-        )
+        
+        try:
+            if PAYMENT_QR: # Check if PAYMENT_QR is not empty
+                await query.message.edit_media(
+                    media=InputMediaPhoto(PAYMENT_QR, caption=PAYMENT_TEXT),
+                    reply_markup=reply_markup
+                )
+            else:
+                await query.message.edit_text(
+                    text=PAYMENT_TEXT,
+                    reply_markup=reply_markup,
+                    parse_mode=enums.ParseMode.HTML,
+                    disable_web_page_preview=True
+                )
+        except Exception as e:
+            logger.error(f"Error sending payment photo/text (buy_premium): {e}")
+            await query.message.edit_text(
+                text=PAYMENT_TEXT,
+                reply_markup=reply_markup,
+                parse_mode=enums.ParseMode.HTML,
+                disable_web_page_preview=True
+            )
 
     elif cb_data.startswith("show_option"):
         reporter_id = cb_data.split("#")[1]
