@@ -856,7 +856,7 @@ async def save_template(client, message):
     userid = message.from_user.id if message.from_user else None
     if not userid:
         return await message.reply(f"You are anonymous admin. Use /connect {message.chat.id} in PM")
-    chat_type = message.chat.type
+    chat_type = enums.ChatType.PRIVATE
 
     if chat_type == enums.ChatType.PRIVATE:
         grpid = await active_connection(str(userid))
@@ -909,7 +909,7 @@ async def requests(bot, message):
                     InlineKeyboardButton('View Request', url=f"{message.reply_to_message.link}"),
                     InlineKeyboardButton('Show Options', callback_data=f'show_option#{reporter}')
                 ]]
-                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾�𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
+                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀� : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
                 success = True
             elif len(content) >= 3:
                 for admin in ADMINS:
@@ -2021,11 +2021,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         'ShortLink',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(settings["is_shortlink"])}#{_[3]}', # Changed here
                     ),
                     InlineKeyboardButton(
                         '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{_[3]}', # Changed here
                     ),
                 ],
             ]
@@ -2120,11 +2120,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         'ShortLink',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(settings["is_shortlink"])}#{_[3]}',
                     ),
                     InlineKeyboardButton(
                         '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{_[3]}',
                     ),
                 ],
             ]
@@ -2219,11 +2219,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         'ShortLink',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(settings["is_shortlink"])}#{_[3]}',
                     ),
                     InlineKeyboardButton(
                         '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{_[3]}',
                     ),
                 ],
             ]
@@ -2318,11 +2318,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         'ShortLink',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(settings["is_shortlink"])}#{_[3]}',
                     ),
                     InlineKeyboardButton(
                         '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{_[3]}',
                     ),
                 ],
             ]
@@ -2417,11 +2417,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         'ShortLink',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(settings["is_shortlink"])}#{_[3]}',
                     ),
                     InlineKeyboardButton(
                         '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{_[3]}',
                     ),
                 ],
             ]
@@ -2516,11 +2516,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         'ShortLink',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(settings["is_shortlink"])}#{_[3]}',
                     ),
                     InlineKeyboardButton(
                         '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{_[3]}',
                     ),
                 ],
             ]
@@ -2615,11 +2615,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         'ShortLink',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(settings["is_shortlink"])}#{_[3]}',
                     ),
                     InlineKeyboardButton(
                         '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{_[3]}',
                     ),
                 ],
             ]
@@ -2714,11 +2714,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         'ShortLink',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(settings["is_shortlink"])}#{_[3]}',
                     ),
                     InlineKeyboardButton(
                         '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink']}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{_[3]}',
                     ),
                 ],
             ]
@@ -2813,11 +2813,11 @@ async def cb_handler(client: Client, query: CallbackQuery):
                 [
                     InlineKeyboardButton(
                         'ShortLink',
-                        callback_data=f'setgs#is_shortlink#{True if settings["is_shortlink"] else False}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{_[3]}', # Changed here
                     ),
                     InlineKeyboardButton(
                         '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
-                        callback_data=f'setgs#is_shortlink#{True if settings["is_shortlink"] else False}#{_[3]}',
+                        callback_data=f'setgs#is_shortlink#{str(True if settings["is_shortlink"] else False)}#{_[3]}', # Changed here
                     ),
                 ],
             ]
