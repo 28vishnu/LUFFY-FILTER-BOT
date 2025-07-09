@@ -20,6 +20,9 @@ BOT_TOKEN = environ.get('BOT_TOKEN', "") # Reverted to empty string. This MUST b
 # Using the provided Telegram File ID for the welcome image.
 PICS = (environ.get('PICS', 'AgACAgUAAxkBAAICuGht-6GMOH1PNyf31mjemh8PCzcYAALPxDEbEDJwV5LouvHkzjTeAAgBAAMCAAN4AAceBA')).split()
 
+# This Picture is for the About section. Replace with your desired image's direct URL or File ID.
+ABOUT_PICS = (environ.get('ABOUT_PICS', 'AgACAgUAAxkBAAICvmht_dkt7a0TDzyQjFGzK1eKOA8-AAKDxDEblp5wV74Yf3LKvjrrAAgBAAMCAAN4AAceBA')).split()
+
 
 # Admins & Users
 ADMINS = [int(admin) if id_pattern.search(admin) else admin for admin in environ.get('ADMINS', '7204704497').split()] # Updated
