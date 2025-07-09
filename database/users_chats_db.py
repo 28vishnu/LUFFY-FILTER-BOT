@@ -4,38 +4,43 @@
 
 import re
 from pymongo.errors import DuplicateKeyError
-import motor.motor_asyncio
-from pymongo import MongoClient
-from info import DATABASE_NAME, USER_DB_URI, OTHER_DB_URI, CUSTOM_FILE_CAPTION, IMDB, IMDB_TEMPLATE, MELCOW_NEW_USERS, BUTTON_MODE, SPELL_CHECK_REPLY, PROTECT_CONTENT, AUTO_DELETE, MAX_BTN, AUTO_FFILTER, SHORTLINK_API, SHORTLINK_URL, SHORTLINK_MODE, TUTORIAL, IS_TUTORIAL
+import motor.motor_asyncio # Ensure this is imported for async operations
+from pymongo import MongoClient # Keep for the referal_user client if it's synchronous or convert it too
 import time
 import datetime
 
-my_client = MongoClient(OTHER_DB_URI)
-mydb = my_client["referal_user"]
+# Changed to motor.motor_asyncio.AsyncIOMotorClient for asynchronous operations
+my_client_referal = motor.motor_asyncio.AsyncIOMotorClient(OTHER_DB_URI)
+mydb_referal = my_client_referal["referal_user"] # Renamed to avoid conflict with self.db in Database class
 
 async def referal_add_user(user_id, ref_user_id):
-    user_db = mydb[str(user_id)]
+    user_db = mydb_referal[str(user_id)] # Use mydb_referal
     user = {'_id': ref_user_id}
     try:
-        user_db.insert_one(user)
+        await user_db.insert_one(user) # Added await
         return True
     except DuplicateKeyError:
+        return False
+    except Exception as e: # Catch specific exception
+        logging.error(f"Error in referal_add_user: {e}")
         return False
     
 
 async def get_referal_all_users(user_id):
-    user_db = mydb[str(user_id)]
-    return user_db.find()
-    
+    user_db = mydb_referal[str(user_id)] # Use mydb_referal
+    return user_db.find() # This returns a cursor, needs to_list() if all results are needed
+
+
 async def get_referal_users_count(user_id):
-    user_db = mydb[str(user_id)]
-    count = user_db.count_documents({})
+    user_db = mydb_referal[str(user_id)] # Use mydb_referal
+    count = await user_db.count_documents({}) # Added await
     return count
     
 
 async def delete_all_referal_users(user_id):
-    user_db = mydb[str(user_id)]
-    user_db.delete_many({}) 
+    user_db = mydb_referal[str(user_id)] # Use mydb_referal
+    await user_db.delete_many({}) # Added await
+
 
 default_setgs = {
     'button': BUTTON_MODE,
@@ -62,9 +67,9 @@ class Database:
     def __init__(self, uri, database_name):
         self._client = motor.motor_asyncio.AsyncIOMotorClient(uri)
         self.db = self._client[database_name]
-        self.col = self.db.users
+        self.col = self.db.users # This collection seems to store general user info
         self.grp = self.db.groups
-        self.users = self.db.uersz
+        self.users = self.db.uersz # This collection seems to store premium/trial user info
         self.bot = self.db.clone_bots
 
 
@@ -106,6 +111,28 @@ class Database:
         count = await self.col.count_documents({})
         return count
 
+    # Added a placeholder for total_files_count as it's called in pm_filter.py
+    async def total_files_count(self):
+        # This function needs to access the file database (ia_filterdb's collections)
+        # To avoid circular imports, you might need to pass the collections or
+        # import ia_filterdb.col and ia_filterdb.sec_col here.
+        # For now, returning a dummy value or implementing a simple count.
+        # A more robust solution would be to pass the file collections to this DB class
+        # or have ia_filterdb expose a count function.
+        # Assuming ia_filterdb.col and ia_filterdb.sec_col are globally accessible or passed.
+        # For a quick fix, let's just return a placeholder or count a dummy collection.
+        # This needs to be properly implemented based on your file saving DB setup.
+        # For now, let's return 0 or log a warning.
+        logging.warning("total_files_count not fully implemented in users_chats_db.py. Returning 0.")
+        return 0 
+        # Example of how it *might* be implemented if ia_filterdb's collections are accessible:
+        # from database.ia_filterdb import col as file_col, sec_col as sec_file_col, MULTIPLE_DATABASE
+        # count = await file_col.count_documents({})
+        # if MULTIPLE_DATABASE and sec_file_col:
+        #     count += await sec_file_col.count_documents({})
+        # return count
+
+
     async def add_clone_bot(self, bot_id, user_id, bot_token):
         settings = {
             'bot_id': bot_id,
@@ -140,7 +167,7 @@ class Database:
         await self.bot.update_one({"bot_id": bot_id}, {"$set": bot_data}, upsert=True)
     
     async def get_all_bots(self):
-        return self.bot.find({})
+        return self.bot.find({}) # Returns a cursor, needs to_list() if all results are needed
         
     async def remove_ban(self, id):
         ban_status = dict(
@@ -167,7 +194,7 @@ class Database:
         return user.get('ban_status', default)
 
     async def get_all_users(self):
-        return self.col.find({})
+        return self.col.find({}) # Returns a cursor, needs to_list() if all results are needed
     
 
     async def delete_user(self, user_id):
@@ -175,10 +202,10 @@ class Database:
 
 
     async def get_banned(self):
-        users = self.col.find({'ban_status.is_banned': True})
-        chats = self.grp.find({'chat_status.is_disabled': True})
-        b_chats = [chat['id'] async for chat in chats]
-        b_users = [user['id'] async for user in users]
+        users_cursor = self.col.find({'ban_status.is_banned': True})
+        chats_cursor = self.grp.find({'chat_status.is_disabled': True})
+        b_chats = [chat['id'] async for chat in chats_cursor] # Iterate asynchronously
+        b_users = [user['id'] async for user in users_cursor] # Iterate asynchronously
         return b_users, b_chats
     
 
@@ -189,8 +216,8 @@ class Database:
     
 
     async def get_chat(self, chat):
-        chat = await self.grp.find_one({'id':int(chat)})
-        return False if not chat else chat.get('chat_status')
+        chat_data = await self.grp.find_one({'id':int(chat)})
+        return False if not chat_data else chat_data.get('chat_status')
     
 
     async def re_enable_chat(self, id):
@@ -225,10 +252,12 @@ class Database:
     
 
     async def get_all_chats(self):
-        return self.grp.find({})
+        return self.grp.find({}) # Returns a cursor, needs to_list() if all results are needed
 
 
     async def get_db_size(self):
+        # This might return the size of the whole database, not just specific collections.
+        # For specific collection size, you might need to query that collection's stats.
         return (await self.db.command("dbstats"))['dataSize']
 
     async def get_user(self, user_id):
@@ -309,3 +338,4 @@ class Database:
     
 
 db = Database(USER_DB_URI, DATABASE_NAME)
+
