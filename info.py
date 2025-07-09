@@ -60,6 +60,7 @@ DELETE_CHANNELS = [int(dch) for dch in environ.get('DELETE_CHANNELS', '0').split
 BOT_USERNAME = environ.get('BOT_USERNAME', 'autofilterrmoviesbot')
 BOT_NAME = environ.get('BOT_NAME', 'ᴄɪɴᴇʙᴏᴛ')
 BOT_ID = int(environ.get('BOT_ID', '0')) # Changed default to '0' to avoid ValueError
+SOURCE_CODE_LNK = environ.get('SOURCE_CODE_LNK', 'https://github.com/Tech-VJ/VJ-FILTER-BOT') # Added SOURCE_CODE_LNK
 
 
 # Database
@@ -289,7 +290,7 @@ VERIFY = bool(environ.get('VERIFY', False)) # Added VERIFY
 NO_RESULTS_MSG = bool(environ.get('NO_RESULTS_MSG', True)) # Added NO_RESULTS_MSG
 
 # Start Command Reactions
-REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🏆", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
+REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🏆", "😎", "🏆", "�", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
 
 # Use Caption Filter
 USE_CAPTION_FILTER = bool(environ.get('USE_CAPTION_FILTER', True)) # Added USE_CAPTION_FILTER
