@@ -30,7 +30,7 @@ LOG_CHANNEL = int(environ.get('LOG_CHANNEL', '-1002737880991')) # Updated
 # Updated LOG_CHANNEL to -1002737880981 as per user request
 
 # This Channel Is For When You Add Your File In This Channel Then Bot Automatically Save All Files In Your Database.
-CHANNELS = [int(ch) for ch in environ.get('CHANNELS', '').split()] # Updated (empty)
+CHANNELS = [int(ch) for ch in environ.get('CHANNELS', '-1002829192804').split()] # Updated (empty)
 
 # This Channel Is For Force Subscribtion, When User Start Your Bot Then Bot Send A Message For Force Subscribtion.
 AUTH_CHANNEL = int(environ.get('AUTH_CHANNEL', '-1002804738225')) # Corrected AUTH_CHANNEL to the provided channel ID
