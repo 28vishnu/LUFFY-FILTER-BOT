@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from pyrogram import Client, filters, enums
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, ChatPermissions, WebAppInfo
 from pyrogram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerIdInvalid, MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
+from urllib.parse import quote_plus # Import quote_plus for URL encoding
 
 from database.ia_filterdb import col, sec_col, get_file_details, get_search_results, get_bad_files
 from database.users_chats_db import db
@@ -91,8 +92,7 @@ from utils import (
     get_cap,
     save_group_settings, # Ensure this is imported from utils.py
     get_poster, # Corrected import for get_poster
-    get_name, # Imported for use in stream link generation
-    get_hash, # Imported for use in stream link generation
+    # Removed get_name, get_hash as they are causing ImportError
 )
 from TechVJ.util.human_readable import get_readable_file_size
 
@@ -121,6 +121,31 @@ EPISODES = ["e01", "e02", "e03", "e04", "e05", "e06", "e07", "e08", "e09", "e10"
 LANGUAGES = ["english", "hindi", "tamil", "telugu", "malayalam", "kannada", "bengali", "marathi", "gujarati", "punjabi"]
 QUALITIES = ["480p", "720p", "1080p", "2160p", "hd", "fhd", "uhd"]
 SEASONS = ["s01", "s02", "s03", "s04", "s05", "s06", "s07", "s08", "s09", "s10"]
+
+# Placeholder functions for get_name and get_hash
+# You should move these to an appropriate utility file (e.g., TechVJ/util/media_utils.py)
+# if they are truly generic and used elsewhere.
+def get_name(msg):
+    """Extracts the file name from a Pyrogram message object."""
+    if msg.document:
+        return msg.document.file_name
+    if msg.video:
+        return msg.video.file_name
+    if msg.audio:
+        return msg.audio.file_name
+    return "unknown_file"
+
+def get_hash(msg):
+    """Generates a simple hash for a Pyrogram message object (for stream links)."""
+    # This is a simplified hash. For robust hashing, consider file_ref or unique IDs.
+    if msg.document:
+        return msg.document.file_unique_id
+    if msg.video:
+        return msg.video.file_unique_id
+    if msg.audio:
+        return msg.audio.file_unique_id
+    return "no_hash"
+
 
 # --- Core Filter Functions ---
 
@@ -187,7 +212,7 @@ async def auto_filter(client, query_text, message_obj, reply_msg_obj, vj_search,
             InlineKeyboardButton("sᴇᴀsᴏɴs",  callback_data=f"seasons#{search_key}")
         ])
         btn.insert(0, [
-            InlineKeyboardButton("𝐒𝐞𝐧𝐝 𝐀𝐥𝐥", callback_data=f"sendfiles#{search_key}"),
+            InlineKeyboardButton("𝐒�𝐧𝐝 𝐀𝐥𝐥", callback_data=f"sendfiles#{search_key}"),
             InlineKeyboardButton("ʟᴀɴɢᴜᴀɢᴇs", callback_data=f"languages#{search_key}"),
             InlineKeyboardButton("ʏᴇᴀʀs", callback_data=f"years#{search_key}")
         ])
@@ -210,7 +235,7 @@ async def auto_filter(client, query_text, message_obj, reply_msg_obj, vj_search,
     if pagination_buttons:
         btn.append(pagination_buttons)
     else:
-        btn.append([InlineKeyboardButton(text="�𝐎 𝐌𝐎𝐑𝐄 𝐏𝐀𝐆𝐄𝐒 𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄", callback_data="pages")])
+        btn.append([InlineKeyboardButton(text="𝐎 𝐌𝐎𝐑𝐄 𝐏𝐀𝐆𝐄𝐒 𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄", callback_data="pages")])
 
     imdb = await get_poster(query_text, file=(files[0])['file_name']) if settings.get("imdb") else None
     
@@ -600,7 +625,7 @@ async def give_filter(client, message):
         if total_results == 0:
             return
         else:
-            return await message.reply_text(f"<b>Hᴇʏ {message.from_user.mention}, {str(total_results)} ʀᴇsᴜʟᴛs ᴀʀᴇ ғᴏᴜɴᴅ ɪɴ ᴍʏ ᴅᴀᴛᴀʙᴀsᴇ ғᴏʀ ʏᴏᴜʀ ᴏ̨ᴜᴇʀʏ {search}. \n\nTʜɪs ɪs ᴀ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ sᴏ ᴛʜᴀᴛ ʏᴏᴜ ᴄᴀn't ɢᴇᴛ ғɪʟᴇs ғʀᴏᴍ ʜᴇʀᴇ...\n\nJᴏɪɴ ᴀɴᴅ Sᴇᴀʀᴄʜ Hᴇʀᴇ - {GRP_LNK}</b>")
+            return await message.reply_text(f"<b>Hᴇʏ {message.from_user.mention}, {str(total_results)} ʀᴇsᴜʟᴛs ᴀʀᴇ ғᴏᴜɴᴅ ɪɴ ᴍʏ ᴅᴀᴛᴀʙᴀsᴇ ғᴏʀ ʏᴏᴜʀ ᴏ̨ᴜᴇʀʏ {search}. \n\nTʜɪs ɪs ᴀ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ sᴏ ᴛʜᴀᴛ ʏᴏᴜ ᴄᴀn't ɢᴇᴛ ғɪʟᴇs ғʀᴏᴍ ʜᴇʀᴇ...\n\nJᴏɪn ᴀɴᴅ Sᴇᴀʀᴄʜ Hᴇʀᴇ - {GRP_LNK}</b>")
 
 # --- Private Message Filter ---
 @Client.on_message(filters.private & filters.text & filters.incoming)
@@ -712,7 +737,7 @@ async def next_page(bot, query):
         ])
         btn.insert(0, [
             InlineKeyboardButton("𝐒𝐞𝐧𝐝 𝐀𝐥𝐥", callback_data=f"sendfiles#{key}"),
-            InlineKeyboardButton("ʟᴀɴɢᴜᴀɢᴇs", callback_data=f"languages#{key}"),
+            InlineKeyboardButton("ʟᴀɴɢᴜᴀɢᴇs", callback=f"languages#{key}"),
             InlineKeyboardButton("ʏᴇᴀʀs", callback_data=f"years#{key}")
         ])
     else:
@@ -745,7 +770,7 @@ async def next_page(bot, query):
     if pagination_buttons:
         btn.append(pagination_buttons)
     else:
-        btn.append([InlineKeyboardButton(text="𝐍𝐎 𝐌𝐎𝐑𝐄 𝐏𝐀𝐆𝐄𝐒 𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄", callback_data="pages")])
+        btn.append([InlineKeyboardButton(text="𝐎 𝐌𝐎𝐑𝐄 𝐏𝐀𝐆𝐄𝐒 𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄", callback_data="pages")])
 
     if not settings["button"]:
         remaining_seconds = "N/A"
@@ -1014,7 +1039,7 @@ async def filter_episodes_cb_handler(client: Client, query: CallbackQuery):
     else:
         btn.insert(0, [
             InlineKeyboardButton('ǫᴜᴀʟɪᴛʏ', callback_data=f"qualities#{key}"),
-            InlineKeyboardButton("ᴇᴘɪsᴏᴅᴇs", callback=f"episodes#{key}"),
+            InlineKeyboardButton("ᴇᴘɪsᴏᴅᴇs", callback_data=f"episodes#{key}"),
             InlineKeyboardButton("sᴇᴀsᴏɴs",  callback_data=f"seasons#{key}")
         ])
         btn.insert(0, [
@@ -1738,20 +1763,20 @@ async def cb_handler(client: Client, query: CallbackQuery):
                     await query.answer(url=f"https://telegram.me/{temp.U_NAME}?start=short_{file_id}")
                     return
                 else:
-                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is Nᴏᴛ Yᴏᴜʀ Mᴏᴠɪᴇ Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ Yᴏᴜʀ's !", show_alert=True)
+                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is Nᴏᴛ Yᴏᴜr Mᴏᴠɪᴇ Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ Yᴏᴜr's !", show_alert=True)
             elif settings.get('is_shortlink') and await db.has_premium_access(query.from_user.id):
                 if clicked == typed:
                     await query.answer(url=f"https://telegram.me/{temp.U_NAME}?start={ident}_{file_id}")
                     return
                 else:
-                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is Nᴏᴛ Yᴏᴜʀ Mᴏᴠɪᴇ Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ Yᴏᴜʀ's !", show_alert=True)
+                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is Nᴏᴛ Yᴏᴜr Mᴏᴠɪᴇ Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ Yᴏᴜr's !", show_alert=True)
 
             else:
                 if clicked == typed:
                     await query.answer(url=f"https://telegram.me/{temp.U_NAME}?start={ident}_{file_id}")
                     return
                 else:
-                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is Nᴏᴛ Yᴏᴜʀ Mᴏᴠɪᴇ Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ Yᴏᴜʀ's !", show_alert=True)
+                    await query.answer(f"Hᴇʏ {query.from_user.first_name}, Tʜɪs Is NᴏT YᴏᴜR Mᴏᴠɪᴇ Rᴇǫᴜᴇsᴛ. Rᴇǫᴜᴇsᴛ YᴏᴜR's !", show_alert=True)
         except UserIsBlocked:
             await query.answer('Uɴʙʟᴏᴄᴋ ᴛʜᴇ ʙᴏᴛ ᴍᴀʜɴ !', show_alert=True)
         except PeerIdInvalid:
