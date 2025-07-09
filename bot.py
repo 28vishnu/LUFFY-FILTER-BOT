@@ -63,7 +63,8 @@ from TechVJ.bot.clients import initialize_clients # Assuming this function exist
 
 ppath = "plugins/*.py"
 files = glob.glob(ppath)
-loop = asyncio.get_event_loop()
+# DeprecationWarning: There is no current event loop - This is often harmless if asyncio.run() is used later
+# loop = asyncio.get_event_loop() # Removed as asyncio.run() handles loop creation
 
 
 async def start():
@@ -76,28 +77,33 @@ async def start():
         await ensure_indexes()
         logger.info("Database cleanup and index setup complete.")
     except Exception as e:
-        logger.error(f"Error during database cleanup or index setup: {e}")
-        # If database setup fails, the bot likely won't function correctly.
-        # Consider exiting or raising a more critical error here.
+        logger.error(f"Error during database cleanup or index setup: {e}. Exiting.")
         sys.exit(1) # Exit if database setup fails critically
 
-    # Start the bot client with FloodWait handling
-    try:
-        await TechVJBot.start()
-        logger.info("Bot started successfully!")
-    except FloodWait as e:
-        logger.warning(f"FloodWait during bot startup: Telegram says to wait for {e.value} seconds. Retrying after delay.")
-        await asyncio.sleep(e.value + 5) # Add a small buffer to the wait time
-        # The most robust solution is setting sleep_threshold in the Client init itself (in TechVJ/bot.py).
-        # This specific handler is for initial startup issues.
-        sys.exit(1) # Exit if bot fails to start after flood wait
-    except Exception as e:
-        logger.exception(f"An error occurred during bot startup: {e}")
-        # If the bot fails to start, it's better to log and exit or retry based on deployment strategy.
-        sys.exit(1) # Exit the application if critical startup fails
+    # Start the bot client with FloodWait handling and retry logic
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            await TechVJBot.start()
+            logger.info("Bot started successfully!")
+            break # Exit loop if startup is successful
+        except FloodWait as e:
+            wait_time = e.value + 5 # Add a small buffer to the wait time
+            logger.warning(f"FloodWait during bot startup (Attempt {attempt+1}/{max_retries}): Telegram says to wait for {e.value} seconds. Retrying after {wait_time}s.")
+            await asyncio.sleep(wait_time)
+        except Exception as e:
+            logger.exception(f"An error occurred during bot startup (Attempt {attempt+1}/{max_retries}): {e}")
+            if attempt == max_retries - 1:
+                logger.error("Max retries reached. Exiting due to persistent startup error.")
+                sys.exit(1) # Exit if max retries are exhausted
+            await asyncio.sleep(10) # Wait a bit before next retry for other errors
+
+    # If bot didn't start after retries, exit
+    if not TechVJBot.is_connected:
+        logger.error("Bot failed to connect after multiple retries. Exiting.")
+        sys.exit(1)
 
     # Initialize other clients (if any, from TechVJ.bot.clients)
-    # Ensure initialize_clients is an async function and handles its own errors
     try:
         await initialize_clients()
     except Exception as e:
@@ -118,7 +124,7 @@ async def start():
         except Exception as e:
             logger.error(f"Error importing plugin {name}: {e}")
 
-    # Start ping server if on Heroku
+    # Start ping server if on Heroku (or similar environment where keepalive is needed)
     if ON_HEROKU:
         asyncio.create_task(ping_server())
 
@@ -143,7 +149,7 @@ async def start():
     except Exception as e:
         logger.error(f"Error fetching bot info: {e}")
 
-    # Send restart messages
+    # Send restart messages with small delays
     tz = pytz.timezone('Asia/Kolkata')
     today = date.today()
     now = datetime.now(tz)
@@ -152,6 +158,7 @@ async def start():
     # Send to LOG_CHANNEL
     try:
         await TechVJBot.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_TXT.format(today, time_str))
+        await asyncio.sleep(1) # Small delay
     except Exception as e:
         print(f"Error sending restart message to LOG_CHANNEL: {e}")
         print("Make Your Bot Admin In Log Channel With Full Rights")
@@ -161,6 +168,7 @@ async def start():
         try:
             k = await TechVJBot.send_message(chat_id=ch, text="**Bot Restarted**")
             await k.delete()
+            await asyncio.sleep(1) # Small delay
         except Exception as e:
             print(f"Error sending restart message to CHANNELS: {e}")
             print("Make Your Bot Admin In File Channels With Full Rights")
@@ -169,6 +177,7 @@ async def start():
     try:
         k = await TechVJBot.send_message(chat_id=AUTH_CHANNEL, text="**Bot Restarted**")
         await k.delete()
+        await asyncio.sleep(1) # Small delay
     except Exception as e:
         print(f"Error sending restart message to AUTH_CHANNEL: {e}")
         print("Make Your Bot Admin In Force Subscribe Channel With Full Rights")
@@ -187,12 +196,11 @@ async def start():
         app = web.AppRunner(await web_server())
         await app.setup()
         bind_address = "0.0.0.0"
-        # Use the PORT environment variable provided by Render
-        site = web.TCPSite(app, bind_address, PORT) # Assign to a variable
+        site = web.TCPSite(app, bind_address, PORT)
         await site.start()
         logger.info(f"Web server started on {bind_address}:{PORT}")
     except Exception as e:
-        logger.error(f"Error starting web server: {e}")
+        logger.error(f"Error starting web server: {e}. Ensure PORT is correctly configured and available.")
         # This is a critical component for some bots, might want to exit or log prominently.
 
     # Keep the bot running indefinitely
