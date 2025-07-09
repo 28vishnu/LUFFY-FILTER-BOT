@@ -59,7 +59,7 @@ async def start(client, message):
         await client.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(message.from_user.id, message.from_user.mention))
     
     # Handle /start command without arguments or with specific arguments
-    if len(message.command) != 2:
+    if len(message.command) != 2: # This block handles the main /start command
         if PREMIUM_AND_REFERAL_MODE == True:
             buttons = [[
                 InlineKeyboardButton('⤬ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ⤬', url=f'http://t.me/{temp.U_NAME}?startgroup=true')
@@ -67,8 +67,8 @@ async def start(client, message):
                 InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data="shortlink_info"),
                 InlineKeyboardButton('ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ', url=GRP_LNK)
             ],[
-                InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'), # Reverted to 'help'
-                InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about') # Reverted to 'about'
+                InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'), 
+                InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about') 
             ],[
                 InlineKeyboardButton('ᴘʀᴇᴍɪᴜᴍ ᴀɴᴅ ʀᴇғᴇʀʀᴀʟ', callback_data='subscription')
             ],[
@@ -81,8 +81,8 @@ async def start(client, message):
                 InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data="shortlink_info"),
                 InlineKeyboardButton('ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ', url=GRP_LNK)
             ],[
-                InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'), # Reverted to 'help'
-                InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about') # Reverted to 'about'
+                InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'), 
+                InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about') 
             ],[
                 InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url=CHNL_LNK)
             ]]
@@ -129,9 +129,10 @@ async def start(client, message):
                 parse_mode=enums.ParseMode.HTML,
                 disable_web_page_preview=True
             )
-        return
+        return # IMPORTANT: Ensure this return is hit after sending the main welcome message
     
     # Remainder of the start command logic (for arguments like subscribe, VJ-referral, etc.)
+    # This block now only handles specific /start arguments and does NOT send a duplicate welcome message.
     if AUTH_CHANNEL and not await is_subscribed(client, message):
         try:
             if REQUEST_TO_JOIN_MODE == True:
@@ -177,66 +178,6 @@ async def start(client, message):
             print(e)
             return await message.reply_text("something wrong with force subscribe.")
             
-    if len(message.command) == 2 and message.command[1] in ["subscribe", "error", "okay", "help"]:
-        if PREMIUM_AND_REFERAL_MODE == True:
-            buttons = [[
-                InlineKeyboardButton('⤬ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ⤬', url=f'http://t.me/{temp.U_NAME}?startgroup=true')
-            ],[
-                InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data="shortlink_info"),
-                InlineKeyboardButton('ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ', url=GRP_LNK)
-            ],[
-                InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'), # Reverted to 'help'
-                InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about') # Reverted to 'about'
-            ],[
-                InlineKeyboardButton('ᴘʀᴇᴍɪᴜᴍ ᴀɴᴅ ʀᴇғᴇʀʀᴀʟ', callback_data='subscription')
-            ],[
-                InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url=CHNL_LNK)
-            ]]
-        else:
-            buttons = [[
-                InlineKeyboardButton('⤬ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ⤬', url=f'http://t.me/{temp.U_NAME}?startgroup=true')
-            ],[
-                InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data="shortlink_info"),
-                InlineKeyboardButton('ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ', url=GRP_LNK)
-            ],[
-                InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'), # Reverted to 'help'
-                InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about') # Reverted to 'about'
-            ],[
-                InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url=CHNL_LNK)
-            ]]
-        if CLONE_MODE == True:
-            buttons.append([InlineKeyboardButton('ᴄʀᴇᴀᴛᴇ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
-        reply_markup = InlineKeyboardMarkup(buttons)      
-        
-        # Send photo or text based on PICS availability
-        try:
-            photo_to_send = random.choice(PICS) if PICS else None
-            if photo_to_send:
-                await message.reply_photo(
-                    photo=photo_to_send,
-                    # Updated START_TXT format to include CHNL_LNK and GRP_LNK
-                    caption=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
-                    reply_markup=reply_markup,
-                    parse_mode=enums.ParseMode.HTML
-                )
-            else:
-                await message.reply_text(
-                    # Updated START_TXT format to include CHNL_LNK and GRP_LNK
-                    text=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
-                    reply_markup=reply_markup,
-                    parse_mode=enums.ParseMode.HTML,
-                    disable_web_page_preview=True
-                )
-        except Exception as e:
-            logger.error(f"Error in sending start photo/text (with command arg): {e}")
-            await message.reply_text(
-                # Updated START_TXT format to include CHNL_LNK and GRP_LNK
-                text=script.START_TXT.format(message.from_user.mention, CHNL_LNK, GRP_LNK),
-                reply_markup=reply_markup,
-                parse_mode=enums.ParseMode.HTML,
-                disable_web_page_preview=True
-            )
-        return
     data = message.command[1]
     if data.split("-", 1)[0] == "VJ":
         user_id = int(data.split("-", 1)[1])
@@ -263,8 +204,8 @@ async def start(client, message):
                     InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data="shortlink_info"),
                     InlineKeyboardButton('ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ', url=GRP_LNK)
                 ],[
-                    InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'), # Reverted to 'help'
-                    InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about') # Reverted to 'about'
+                    InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'), 
+                    InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about') 
                 ],[
                     InlineKeyboardButton('ᴘʀᴇᴍɪᴜᴍ ᴀɴᴅ ʀᴇғᴇʀʀᴀʟ', callback_data='subscription')
                 ],[
@@ -277,8 +218,8 @@ async def start(client, message):
                     InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data="shortlink_info"),
                     InlineKeyboardButton('ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ', url=GRP_LNK)
                 ],[
-                    InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'), # Reverted to 'help'
-                    InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about') # Reverted to 'about'
+                    InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'), 
+                    InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about') 
                 ],[
                     InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url=CHNL_LNK)
                 ]]
@@ -976,7 +917,7 @@ async def requests(bot, message):
                         InlineKeyboardButton('View Request', url=f"{message.reply_to_message.link}"),
                         InlineKeyboardButton('Show Options', callback_data=f'show_option#{reporter}')
                     ]]
-                    reported_post = await bot.send_message(chat_id=admin, text=f"<b>𝖱𝖾�𝗈𝗋𝗍𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
+                    reported_post = await bot.send_message(chat_id=admin, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝗍𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
                     success = True
             else:
                 if len(content) < 3:
@@ -1253,7 +1194,7 @@ async def removetutorial(bot, message):
 
 @Client.on_message(filters.command("restart") & filters.user(ADMINS))
 async def stop_button(bot, message):
-    msg = await bot.send_message(text="**🔄 𝙿𝚁𝙾𝙲𝙴𝚂𝚂𝙴𝚂 𝚂𝚃𝙾𝙿𝙴𝙳. 𝙱𝙾𝚃 𝙸𝚂 𝚁𝙴𝚂𝚃𝙰𝚁𝚃𝙸𝙽𝙶...**", chat_id=message.chat.id)       
+    msg = await bot.send_message(text="**🔄 �𝚁𝙾𝙲𝙴𝚂𝚂𝙴𝚂 𝚂𝚃𝙾𝙿𝙴𝙳. 𝙱𝙾𝚃 𝙸𝚂 𝚁𝙴𝚂𝚃𝙰𝚁𝚃𝙸𝙽𝙶...**", chat_id=message.chat.id)       
     await asyncio.sleep(3)
     await msg.edit("**✅️ 𝙱𝙾𝚃 𝙸𝚂 𝚁𝙴𝚂𝚃𝙰𝚁𝚃𝙴𝙳. 𝙽𝙾𝚆 𝚈𝙾𝚄 𝙲𝙰𝙽 𝚄𝚂𝙴 𝙼𝙴**")
     os.execl(sys.executable, sys.executable, *sys.argv)
@@ -1427,3 +1368,39 @@ async def purge_requests(client, message):
             parse_mode=enums.ParseMode.MARKDOWN,
             disable_web_page_preview=True
         )
+
+# New /fileid command handler
+@Client.on_message(filters.command("fileid") & filters.private & filters.reply)
+async def get_file_id(client, message):
+    """
+    Replies with the file_id of the replied-to media message.
+    This command is intended for private chat and requires a reply to a media message.
+    """
+    if message.reply_to_message:
+        # Check if the replied message contains any media
+        if message.reply_to_message.photo:
+            file_id = message.reply_to_message.photo.file_id
+            file_type = "Photo"
+        elif message.reply_to_message.video:
+            file_id = message.reply_to_message.video.file_id
+            file_type = "Video"
+        elif message.reply_to_message.document:
+            file_id = message.reply_to_message.document.file_id
+            file_type = "Document"
+        elif message.reply_to_message.audio:
+            file_id = message.reply_to_message.audio.file_id
+            file_type = "Audio"
+        elif message.reply_to_message.sticker:
+            file_id = message.reply_to_message.sticker.file_id
+            file_type = "Sticker"
+        elif message.reply_to_message.animation:
+            file_id = message.reply_to_message.animation.file_id
+            file_type = "Animation (GIF)"
+        else:
+            await message.reply_text("The replied message does not contain any supported media to extract a file ID.")
+            return
+
+        await message.reply_text(f"**File Type**: {file_type}\n**File ID**: `{file_id}`\n\n_You can use this File ID in your `PICS` variable in `info.py`._", parse_mode=enums.ParseMode.MARKDOWN)
+    else:
+        await message.reply_text("Please reply to a media message (photo, video, document, etc.) to get its file ID.")
+
