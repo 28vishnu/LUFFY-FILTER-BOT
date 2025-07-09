@@ -10,7 +10,7 @@ from Script import script
 id_pattern = re.compile(r'^.\d+$')
 
 # Bot information
-SESSION = environ.get('SESSION', 'TechVJBot')
+SESSION = environ.get('SESSION', 'CineBot')
 API_ID = int(environ.get('API_ID', '23394197')) # Updated
 API_HASH = environ.get('API_HASH', 'c479cdf25a47b32295ff0d6b15709aac') # Updated with the provided API Hash
 BOT_TOKEN = environ.get('BOT_TOKEN', "") # Reverted to empty string. This MUST be set as an environment variable on Render.
@@ -30,18 +30,18 @@ LOG_CHANNEL = int(environ.get('LOG_CHANNEL', '-1002737880991')) # Updated
 # Updated LOG_CHANNEL to -1002737880981 as per user request
 
 # This Channel Is For When You Add Your File In This Channel Then Bot Automatically Save All Files In Your Database.
-CHANNELS = [int(ch) for ch in environ.get('CHANNELS', '').split()] # Updated (empty)
+CHANNELS = [int(ch) for ch in environ.get('CHANNELS', '-1002829192804').split()] # Updated (empty)
 
 # This Channel Is For Force Subscribtion, When User Start Your Bot Then Bot Send A Message For Force Subscribtion.
 AUTH_CHANNEL = int(environ.get('AUTH_CHANNEL', '-1002804738225')) # Corrected AUTH_CHANNEL to the provided channel ID
 # Updated AUTH_CHANNEL to -1002804738225 as per user request
 
 # This Channel Is For When User Request A Movie In Your Bot Then Bot Send That Movie Name In This Channel.
-REQST_CHANNEL = int(environ.get('REQST_CHANNEL', '0')) # Updated (empty, assuming 0 if not set)
+REQST_CHANNEL = int(environ.get('REQST_CHANNEL', '-1002829192804')) # Updated (empty, assuming 0 if not set)
 # Updated REQST_CHANNEL to -1002412902656 as per user request
 
 # This Channel Is For When User Request A Movie In Your Bot And Bot Not Found That Movie Then Bot Send That Movie Name In This Channel.
-INDEX_REQ_CHANNEL = int(environ.get('INDEX_REQ_CHANNEL', '-1002737880991')) # Updated
+INDEX_REQ_CHANNEL = int(environ.get('INDEX_REQ_CHANNEL', '-1002802211490')) # Updated
 # Updated INDEX_REQ_CHANNEL to -1002802211490 as per user request
 
 # This Channel Is For When You Want To Store Files In Your Bot Database Then Add Your File In This Channel.
@@ -53,14 +53,14 @@ DELETE_CHANNELS = [int(dch) for dch in environ.get('DELETE_CHANNELS', '0').split
 
 
 # About Bot
-BOT_USERNAME = environ.get('BOT_USERNAME', 'VJ_Filter_Bot')
-BOT_NAME = environ.get('BOT_NAME', 'VJ Filter Bot')
+BOT_USERNAME = environ.get('BOT_USERNAME', 'autofilterrmoviesbot')
+BOT_NAME = environ.get('BOT_NAME', 'ᴄɪɴᴇʙᴏᴛ')
 BOT_ID = int(environ.get('BOT_ID', '0')) # Changed default to '0' to avoid ValueError
 
 
 # Database
 DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://vishnusaketh07:moviesai25@cluster0.bdifagm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0") # Keep as is, you need to provide your MongoDB URI
-DATABASE_NAME = environ.get('DATABASE_NAME', "VJ-Filter-Bot")
+DATABASE_NAME = environ.get('DATABASE_NAME', "Filter-Bot")
 COLLECTION_NAME = environ.get('COLLECTION_NAME', 'Telegram_Files')
 
 # For Multiple Database
@@ -267,16 +267,16 @@ CACHE_TIME = int(environ.get('CACHE_TIME', 300)) # Added CACHE_TIME
 PUBLIC_FILE_STORE = bool(environ.get('PUBLIC_FILE_STORE', True)) # Added PUBLIC_FILE_STORE
 
 # Support Chat
-SUPPORT_CHAT = environ.get('SUPPORT_CHAT', 'KingVj01') # Added SUPPORT_CHAT
+SUPPORT_CHAT = environ.get('SUPPORT_CHAT', 'luffydev2k') # Added SUPPORT_CHAT
 
 # Owner Link
-OWNER_LNK = environ.get('OWNER_LNK', 'https://t.me/KingVj01') # Added OWNER_LNK
+OWNER_LNK = environ.get('OWNER_LNK', 'https://t.me/luffydev2k') # Added OWNER_LNK
 
 # Channel Link
-CHNL_LNK = environ.get('CHNL_LNK', 'https://t.me/Tech_VJ') # Added CHNL_LNK
+CHNL_LNK = environ.get('CHNL_LNK', 'https://t.me/cineofcl') # Added CHNL_LNK
 
 # Group Link
-GRP_LNK = environ.get('GRP_LNK', 'https://t.me/VJ_Botz') # Added GRP_LNK
+GRP_LNK = environ.get('GRP_LNK', 'https://t.me/cinebotofclgrup') # Added GRP_LNK
 
 # Verify
 VERIFY = bool(environ.get('VERIFY', False)) # Added VERIFY
