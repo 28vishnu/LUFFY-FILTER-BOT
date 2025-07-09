@@ -37,11 +37,11 @@ AUTH_CHANNEL = int(environ.get('AUTH_CHANNEL', '-1002804738225')) # Corrected AU
 # Updated AUTH_CHANNEL to -1002804738225 as per user request
 
 # This Channel Is For When User Request A Movie In Your Bot Then Bot Send That Movie Name In This Channel.
-REQST_CHANNEL = int(environ.get('REQST_CHANNEL', '0')) # Updated (empty, assuming 0 if not set)
+REQST_CHANNEL = int(environ.get('REQST_CHANNEL', '-1002412902656')) # Updated (empty, assuming 0 if not set)
 # Updated REQST_CHANNEL to -1002412902656 as per user request
 
 # This Channel Is For When User Request A Movie In Your Bot And Bot Not Found That Movie Then Bot Send That Movie Name In This Channel.
-INDEX_REQ_CHANNEL = int(environ.get('INDEX_REQ_CHANNEL', '-1002737880991')) # Updated
+INDEX_REQ_CHANNEL = int(environ.get('INDEX_REQ_CHANNEL', '-1002802211490')) # Updated
 # Updated INDEX_REQ_CHANNEL to -1002802211490 as per user request
 
 # This Channel Is For When You Want To Store Files In Your Bot Database Then Add Your File In This Channel.
