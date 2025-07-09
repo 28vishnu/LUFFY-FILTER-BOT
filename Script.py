@@ -8,7 +8,7 @@ class script(object):
     
 ɪ ᴀᴍ ʟᴀᴛᴇꜱᴛ ᴀᴅᴠᴀɴᴄᴇᴅ ᴀɴᴅ ᴘᴏᴡᴇʀꜰᴜʟ ᴀᴜᴛᴏ ꜰɪʟᴛᴇʀ ʙᴏᴛ. ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ ᴍᴇ ɪɴ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴛᴏ ᴇᴀʀɴ ᴜɴʟɪᴍɪᴛᴇᴅ ᴍᴏɴᴇʏ...💸
 
-📢 ᴊᴏɪɴ ᴏᴜʀ <a href='{}'>ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ</a> ᴀɴᴅ <a href='{}'>ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ</a> ғᴏʀ ᴍᴏʀᴇ ᴜᴘᴅᴀᴛᴇs!</b>"""
+� ᴊᴏɪɴ ᴏᴜʀ <a href='{}'>ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ</a> ᴀɴᴅ <a href='{}'>ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ</a> ғᴏʀ ᴍᴏʀᴇ ᴜᴘᴅᴀᴛᴇs!</b>"""
 
     # Updated CLONE_START_TXT to include placeholders for channel and group links
     CLONE_START_TXT = """<b><blockquote>ʜᴇʟʟᴏ {}, ᴍʏ ɴᴀᴍᴇ <a href=https://t.me/{}>{}</a></blockquote>
@@ -20,30 +20,28 @@ class script(object):
     HELP_TXT = """<b>ʜᴇʟʟᴏ {}
 ʜᴇʀᴇ ɪs ᴀʟʟ ᴍʏ ᴜsᴇғᴜʟʟ ғᴇᴀᴛᴜʀᴇs.</b>"""
 
-    # Updated ABOUT_TXT to use direct Telegram user link for developer and add source code link
+    # Updated ABOUT_TXT to use direct Telegram user link for developer and removed source code link
     ABOUT_TXT = """<b><blockquote>⍟───[ ᴍʏ ᴅᴇᴛᴀɪʟꜱ ]───⍟</blockquote>
     
 ‣ ᴍʏ ɴᴀᴍᴇ : <a href=https://t.me/{}>{}</a>
 ‣ ᴍʏ ʙᴇsᴛ ғʀɪᴇɴᴅ : <a href='tg://settings'>ᴛʜɪs ᴘᴇʀsᴏɴ</a> 
-‣ ᴅᴇᴠᴇʟᴏᴘᴇʀ : ᴅᴍ <a href='tg://user?id={}'>{}</a>
+‣ ᴅᴇᴠᴇʟᴏᴘᴇʀ : ᴅᴍ <a href='tg://user?id={}'>ᴛʜᴇ ᴀᴅᴍɪɴ</a> 
 ‣ ʟɪʙʀᴀʀʏ : <a href='https://docs.pyrogram.org/'>ᴘʏʀᴏɢʀᴀᴍ</a> 
 ‣ ʟᴀɴɢᴜᴀɢᴇ : <a href='https://www.python.org/download/releases/3.0/'>ᴘʏᴛʜᴏɴ 3</a> 
 ‣ ᴅᴀᴛᴀ ʙᴀsᴇ : <a href='https://www.mongodb.com/'>ᴍᴏɴɢᴏ ᴅʙ</a> 
 ‣ ʙᴏᴛ sᴇʀᴠᴇʀ : <a href='https://render.com'>ʀᴇɴᴅᴇʀ</a> 
-‣ ʙᴜɪʟᴅ sᴛᴀᴛᴜs : ᴠ2.7.1 [sᴛᴀʙʟᴇ]>
-‣ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : <a href='{}'>ɢɪᴛʜᴜʙ</a></b>""" # Changed Heroku to Render and added source code link
+‣ ʙᴜɪʟᴅ sᴛᴀᴛᴜs : ᴠ2.7.1 [sᴛᴀʙʟᴇ]></b>""" # Changed Heroku to Render and removed source code link
 
-    # Updated CLONE_ABOUT_TXT to use direct Telegram user link for cloned from and add source code link
+    # Updated CLONE_ABOUT_TXT to use direct Telegram user link for cloned from and removed source code link
     CLONE_ABOUT_TXT = """<b><blockquote>⍟───[ ᴍʏ ᴀʙᴏᴜᴛ ]───⍟</blockquote>
     
 ‣ ᴍʏ ɴᴀᴍᴇ : {}
 ‣ ᴍʏ ʙᴇsᴛ ғʀɪᴇɴᴅ : <a href='tg://settings'>ᴛʜɪs ᴘᴇʀsᴏɴ</a> 
-‣ ᴄʟᴏɴᴇᴅ ғʀᴏᴍ : ᴅᴍ <a href='tg://user?id={}'>{}</a>
+‣ ᴄʟᴏɴᴇᴅ ғʀᴏᴍ : ᴅᴍ <a href='tg://user?id={}'>ᴛʜᴇ ᴀᴅᴍɪɴ</a>
 ‣ ʟɪʙʀᴀʀʏ : <a href='https://docs.pyrogram.org/'>ᴘʏʀᴏɢʀᴀᴍ</a> 
 ‣ ʟᴀɴɢᴜᴀɢᴇ : <a href='https://www.python.org/download/releases/3.0/'>ᴘʏᴛʜᴏɴ 3</a> 
 ‣ ᴅᴀᴛᴀ ʙᴀsᴇ : <a href='https://www.mongodb.com/'>ᴍᴏɴɢᴏ ᴅʙ</a> 
-‣ ʙᴜɪʟᴅ sᴛᴀᴛᴜs : ᴠ2.7.1 [sᴛᴀʙʟᴇ]>
-‣ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : <a href='{}'>ɢɪᴛʜᴜʙ</a></b>""" # Added source code link
+‣ ʙᴜɪʟᴅ sᴛᴀᴛᴜs : ᴠ2.7.1 [sᴛᴀʙʟᴇ]></b>""" # Removed source code link
 
     CLONE_TXT = """<b>🌟 <u>CLONE MODE</u>
 
@@ -63,7 +61,7 @@ class script(object):
 ʙᴜʏ ᴘᴀɪᴅ ᴘʟᴀɴ ʙʏ - /plan</b>"""
 
     MANUELFILTER_TXT = """ʜᴇʟᴘ: <b>ꜰɪʟᴛᴇʀꜱ</b>
-- ꜰɪʟᴛᴇʀ ɪꜱ ᴀ ꜰᴇᴀᴛᴜʀᴇ ᴡᴇʀᴇ ᴜꜱᴇʀꜱ ᴄᴀɴ ꜱᴇᴛ ᴀᴜᴛᴏᴍᴀᴛᴇᴅ ʀᴇᴘʟɪᴇꜱ ꜰᴏʀ ᴀ ᴘᴀʀᴛɪᴄᴜʟᴀʀ ᴋᴇʏᴡᴏʀᴅ ᴀɴᴅ ɪ ᴡɪʟʟ ʀᴇꜱᴘᴏɴᴅ ᴡʜᴇɴᴇᴠᴇʀ ᴀ ᴋᴇyᴡᴏʀᴅ ɪꜱ ꜰᴏᴜɴᴅ ɪɴ ᴛʜᴇ ᴍᴇꜱꜱᴀɢᴇ
+- ꜰɪʟᴛᴇʀ ɪꜱ ᴀ ꜰᴇᴀᴛᴜʀᴇ ᴡᴇʀᴇ ᴜꜱᴇʀꜱ ᴄᴀɴ ꜱᴇᴛ ᴀᴜᴛᴏᴍᴀᴛᴇᴅ ʀᴇᴘʟɪᴇꜱ ꜰᴏʀ ᴀ ᴘᴀʀᴛɪᴄᴜʟᴀʀ ᴋᴇyᴡᴏʀᴅ ᴀɴᴅ ɪ ᴡɪʟʟ ʀᴇꜱᴘᴏɴᴅ ᴡʜᴇɴᴇᴠᴇʀ ᴀ ᴋᴇyᴡᴏʀᴅ ɪꜱ ꜰᴏᴜɴᴅ ɪɴ ᴛʜᴇ ᴍᴇꜱꜱᴀɢᴇ
 <b>ɴᴏᴛᴇ:</b>
 1. ᴛʜɪꜱ ʙᴏᴛ ꜱʜᴏᴜʟᴅ ʜᴀᴠᴇ ᴀᴅᴍɪɴ ᴘʀɪᴠɪʟᴇɢᴇ.
 2. ᴏɴʟy ᴀᴅᴍɪɴꜱ ᴄᴀɴ ᴀᴅᴅ ꜰɪʟᴛᴇʀꜱ ɪɴ ᴀ ᴄʜᴀᴛ.
@@ -316,7 +314,7 @@ Aᴠᴀɪʟᴀʙʟᴇ ᴄᴏᴍᴍᴀɴds:
   
  ɴᴏᴛᴇ: ᴡʜɪʟᴇ ᴜꜱɪɴɢ /tr yᴏᴜ ꜱʜᴏᴜʟᴅ ꜱᴩᴇᴄɪꜰy ᴛʜᴇ ʟᴀɴɢᴜᴀɢᴇ ᴄᴏᴅᴇ 
   
- ᴇxᴀᴍᴩʟᴇ: /�𝗋 ᴍʟ 
+ ᴇxᴀᴍᴩʟᴇ: /𝗍𝗋 ᴍʟ 
  • ᴇɴ = ᴇɴɢʟɪꜱʜ 
  • ᴍʟ = ᴍᴀʟᴀyᴀʟᴀᴍ 
  • ʜɪ = ʜɪɴᴅɪ</b>""" 
@@ -431,7 +429,7 @@ Aᴠᴀɪʟᴀʙʟᴇ ᴄᴏᴍᴍᴀɴds:
  ᴄᴀʀʙᴏɴ ɪꜱ ᴀ ꜰᴇᴜᴛᴜʀᴇ ᴛᴏ ᴍᴀᴋᴇ ᴛʜᴇ ɪᴍᴀɢᴇ ᴀꜱ ꜱʜᴏᴡɴ ɪɴ ᴛʜᴇ ᴛᴏᴩ ᴡɪᴛʜ yᴏᴜʀ ᴛᴇxᴛꜱ. 
  ꜰᴏʀ ᴜꜱɪɴɢ ᴛʜᴇ ᴍᴏᴅᴜʟᴇ ᴊᴜꜱᴛ ꜱᴇɴᴅ ᴛʜᴇ ᴛᴇxᴛ ᴀɴᴅ ᴏᴇᴩʟᴀʏ ᴛɪ ɪᴛ ᴡɪᴛʜ  /carbon ᴄᴏᴍᴍᴀɴᴅ ᴛʜᴇ ʙᴏᴛ ᴡɪʟʟ ᴩᴇᴩᴀʏ ᴡɪᴛʜ ᴛʜᴇ ᴄᴀʀʙᴏɴ ɪᴍᴀɢᴇ 
 </b>""" 
-    GEN_PASS = """<b>Hᴇʟᴘ: Pᴀꜱꜱᴡᴏʀᴅ Gᴇɴᴇʀᴀᴛᴏʀ 
+    GEN_PASS = """<b>Hᴇʟᴘ: Pᴀꜱꜱᴡᴏʀᴅ Gᴇɴᴇᴇʀᴀᴛᴏʀ 
   
  Tʜᴇʀᴇ Iꜱ Nᴏᴛʜɪɴɢ Tᴏ Kɴᴏᴡ Mᴏʀᴇ. Sᴇɴᴅ Mᴇ Tʜᴇ Lɪᴍɪᴛ Oғ Yᴏᴜʀ Pᴀꜱꜱᴡᴏʀᴅ. 
  - I Wɪʟʟ Gɪᴠᴇ Tʜᴇ Pᴀꜱꜱᴡᴏʀᴅ Oғ Tʜᴀᴛ Lɪᴍɪᴛ. 
