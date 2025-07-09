@@ -6,16 +6,16 @@ import os, string, logging, random, asyncio, time, datetime, re, sys, json, base
 from Script import script
 from pyrogram import Client, filters, enums
 from pyrogram.errors import ChatAdminRequired, FloodWait, UserNotParticipant # Import UserNotParticipant
-from pyrogram.types import *
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, WebAppInfo, InputMediaPhoto # Explicitly import InputMediaPhoto
 from database.ia_filterdb import col, sec_col, get_file_details, unpack_new_file_id, get_bad_files
 from database.users_chats_db import db, delete_all_referal_users, get_referal_users_count, get_referal_all_users, referal_add_user
 from database.join_reqs import JoinReqs
-# Removed SOURCE_CODE_LNK from import as it's no longer used for formatting
-from info import CLONE_MODE, OWNER_LNK, REACTIONS, CHANNELS, REQUEST_TO_JOIN_MODE, TRY_AGAIN_BTN, ADMINS, SHORTLINK_MODE, PREMIUM_AND_REFERAL_MODE, STREAM_MODE, AUTH_CHANNEL, REFERAL_PREMEIUM_TIME, REFERAL_COUNT, PAYMENT_TEXT, PAYMENT_QR, LOG_CHANNEL, PICS, BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT, CHNL_LNK, GRP_LNK, REQST_CHANNEL, SUPPORT_CHAT, MAX_BTN, VERIFY, SHORTLINK_API, SHORTLINK_URL, TUTORIAL, VERIFY_TUTORIAL, IS_TUTORIAL, URL, BOT_USERNAME, BOT_NAME 
+from info import CLONE_MODE, OWNER_LNK, REACTIONS, CHANNELS, REQUEST_TO_JOIN_MODE, TRY_AGAIN_BTN, ADMINS, SHORTLINK_MODE, PREMIUM_AND_REFERAL_MODE, STREAM_MODE, AUTH_CHANNEL, REFERAL_PREMEIUM_TIME, REFERAL_COUNT, PAYMENT_TEXT, PAYMENT_QR, LOG_CHANNEL, PICS, ABOUT_PICS, BATCH_FILE_CAPTION, CUSTOM_FILE_CAPTION, PROTECT_CONTENT, CHNL_LNK, GRP_LNK, REQST_CHANNEL, SUPPORT_CHAT, MAX_BTN, VERIFY, SHORTLINK_API, SHORTLINK_URL, TUTORIAL, VERIFY_TUTORIAL, IS_TUTORIAL, URL, BOT_USERNAME, BOT_NAME 
 from utils import get_settings, pub_is_subscribed, get_size, is_subscribed, save_group_settings, temp, verify_user, check_token, check_verification, get_token, get_shortlink, get_tutorial, get_seconds
 from database.connections_mdb import active_connection
 from urllib.parse import quote_plus
 from TechVJ.util.file_properties import get_name, get_hash, get_media_file_size
+
 logger = logging.getLogger(__name__)
 
 BATCH_FILES = {}
@@ -909,7 +909,7 @@ async def requests(bot, message):
                     InlineKeyboardButton('View Request', url=f"{message.reply_to_message.link}"),
                     InlineKeyboardButton('Show Options', callback_data=f'show_option#{reporter}')
                 ]]
-                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾𝗌𝗌𝖺𝗀� : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
+                reported_post = await bot.send_message(chat_id=REQST_CHANNEL, text=f"<b>𝖱𝖾𝗉𝗈𝗋𝖾𝗋 : {mention} ({reporter})\n\n𝖬𝖾�𝗌𝖺𝗀𝖾 : {content}</b>", reply_markup=InlineKeyboardMarkup(btn))
                 success = True
             elif len(content) >= 3:
                 for admin in ADMINS:
@@ -1119,7 +1119,7 @@ async def showshortlink(bot, message):
     userid = message.from_user.id
     user = await bot.get_chat_member(grpid, userid)
     if user.status != enums.ChatMemberStatus.ADMINISTRATOR and user.status != enums.ChatMemberStatus.OWNER and str(userid) not in ADMINS:
-        return await message.reply_text("<b>Tʜɪs ᴄᴏᴍᴍᴀɴᴅ Wᴏʀᴋs Oɴʟy Fᴏʀ ᴛʜɪs Gʀᴏᴜᴘ Oᴡɴᴇʀ/Aᴅᴍɪɴ\n\nTʀʏ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ɪn Yᴏᴜʀ Oᴡn Gʀᴏᴜᴘ, Iғ Yᴏᴜ Aʀᴇ Usɪɴɢ Mᴇ Iɴ Yᴏᴜʀ Gʀᴏᴜᴘ</b>")
+        return await message.reply_text("<b>Tʜɪs ᴄᴏᴍᴍᴀɴᴅ Wᴏʀks Oɴʟy Fᴏʀ ᴛʜɪs Gʀᴏᴜᴘ Oᴡɴᴇʀ/Aᴅᴍɪɴ\n\nTʀʏ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ɪn Yᴏᴜʀ Oᴡn Gʀᴏᴜᴘ, Iғ Yᴏᴜ Aʀᴇ Usɪɴɢ Mᴇ Iɴ Yᴏᴜʀ Gʀᴏᴜᴘ</b>")
     else:
         settings = await get_settings(chat_id) #fetching settings for group
         if 'shortlink' in settings.keys() and 'tutorial' in settings.keys():
@@ -1404,3 +1404,1425 @@ async def get_file_id(client, message):
     else:
         await message.reply_text("Please reply to a media message (photo, video, document, etc.) to get its file ID.")
 
+
+@Client.on_callback_query()
+async def cb_handler(client: Client, query: CallbackQuery):
+    cb_data = query.data
+    if "close_data" in cb_data:
+        await query.message.delete()
+    elif "del#" in cb_data:
+        try:
+            file_id = cb_data.split("#")[1]
+            pre = 'filep' if PROTECT_CONTENT else 'file'
+            if STREAM_MODE == True:
+                button = [[InlineKeyboardButton('sᴛʀᴇᴀᴍ ᴀɴᴅ ᴅᴏᴡɴʟᴏᴀᴅ', callback_data=f'generate_stream_link:{file_id}')]]
+                reply_markup=InlineKeyboardMarkup(button)
+            else:
+                reply_markup = None
+            msg = await client.send_cached_media(
+                chat_id=query.from_user.id,
+                file_id=file_id,
+                protect_content=True if pre == 'filep' else False,
+                reply_markup=reply_markup
+            )
+            filetype = msg.media
+            file = getattr(msg, filetype.value)
+            title = file.file_name
+            size=get_size(file.file_size)
+            f_caption = f"<code>{title}</code>"
+            if CUSTOM_FILE_CAPTION:
+                try:
+                    f_caption=CUSTOM_FILE_CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='')
+                except:
+                    return
+            await msg.edit_caption(caption=f_caption)
+            btn = [[InlineKeyboardButton("✅ ɢᴇᴛ ғɪʟᴇ ᴀɢᴀɪɴ ✅", callback_data=f'del#{file_id}')]]
+            k = await msg.reply(text=f"<blockquote><b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ <b><u>10 mins</u> 🫥 <i></b>(ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs)</i>.\n\n<b><i>ᴘʟᴇᴀsᴇ ғᴏʀᴡᴀʀᴅ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ᴏʀ ᴀɴy ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ.</i></b></div>")
+            await asyncio.sleep(600)
+            await msg.delete()
+            await k.edit_text("<b>✅ ʏᴏᴜʀ ᴍᴇssᴀɢᴇ ɪs sᴜᴄᴄᴇssғᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ ɪғ ʏᴏᴜ ᴡᴀɴᴛ ᴀɢᴀɪɴ ᴛʜᴇɴ ᴄʟɪᴄᴋ ᴏɴ ʙᴇʟᴏᴡ ʙᴜᴛᴛᴏɴ</b>",reply_markup=InlineKeyboardMarkup(btn))
+            await query.message.delete()
+        except Exception as e:
+            await query.message.edit(f"Error: {e}")
+            
+    elif cb_data.startswith("checksub"):
+        if AUTH_CHANNEL and not await is_subscribed(client, query):
+            await query.answer("I am not subscribed to the channel.", show_alert=True)
+            return
+        
+        # If subscribed, proceed with the original start command logic
+        ident, file_id = cb_data.split("#")
+        try:
+            pre, file_id = ((base64.urlsafe_b64decode(file_id + "=" * (-len(file_id) % 4))).decode("ascii")).split("_", 1)
+        except:
+            pre = ""
+        files_ = await get_file_details(file_id)           
+        if not files_:
+            return await query.message.edit('No such file exist.')
+        files = files_
+        title = files["file_name"]
+        size=get_size(files["file_size"])
+        f_caption=files["caption"]
+        if CUSTOM_FILE_CAPTION:
+            try:
+                f_caption=CUSTOM_FILE_CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='' if f_caption is None else f_caption)
+            except:
+                f_caption=f_caption
+        if f_caption is None:
+            f_caption = f"{' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@'), files['file_name'].split()))}"
+        if not await db.has_premium_access(query.from_user.id):
+            if not await check_verification(client, query.from_user.id) and VERIFY == True:
+                btn = [[
+                    InlineKeyboardButton("ᴠᴇʀɪғʏ", url=await get_token(client, query.from_user.id, f"https://telegram.me/{query.message.chat.username}?start="))
+                ],[
+                    InlineKeyboardButton("ʜᴏᴡ ᴛᴏ ᴠᴇʀɪғʏ", url=VERIFY_TUTORIAL)
+                ]]
+                text = "<b>ʜᴇʏ {} 👋,\n\nʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴠᴇʀɪғɪᴇᴅ ᴛᴏᴅᴀʏ, ᴘʟᴇᴀꜱᴇ ᴄʟɪᴄᴋ ᴏɴ ᴠᴇʀɪғʏ & ɢᴇᴛ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇꜱꜱ ғᴏʀ ᴛᴏᴅᴀʏ</b>"
+                if PREMIUM_AND_REFERAL_MODE == True:
+                    text += "<b>ɪғ ʏᴏᴜ ᴡᴀɴᴛ ᴅɪʀᴇᴄᴛ ғɪʟᴇꜱ ᴡɪᴛʜᴏᴜᴛ ᴀɴy ᴠᴇʀɪғɪᴄᴀᴛɪᴏɴꜱ ᴛʜᴇɴ ʙᴜʏ ʙᴏᴛ ꜱᴜʙꜱᴄʀɪᴘᴛɪᴏɴ ☺️\n\n💶 ꜱᴇɴᴅ /plan ᴛᴏ ʙᴜʏ ꜱᴜʙꜱᴄʀɪᴘᴛɪᴏɴ</b>"
+                await query.message.reply_text(
+                    text=text.format(query.from_user.mention),
+                    protect_content=True,
+                    reply_markup=InlineKeyboardMarkup(btn)
+                )
+                return
+        if STREAM_MODE == True:
+            button = [[InlineKeyboardButton('sᴛʀᴇᴀᴍ ᴀɴᴅ ᴅᴏᴡɴʟᴏᴀᴅ', callback_data=f'generate_stream_link:{file_id}')]]
+            reply_markup=InlineKeyboardMarkup(button)
+        else:
+            reply_markup = None
+        msg = await client.send_cached_media(
+            chat_id=query.from_user.id,
+            file_id=file_id,
+            caption=f_caption,
+            protect_content=True if pre == 'filep' else False,
+            reply_markup=reply_markup
+        )
+        btn = [[InlineKeyboardButton("✅ ɢᴇᴛ ғɪʟᴇ ᴀɢᴀɪɴ ✅", callback_data=f'del#{file_id}')]]
+        k = await msg.reply(text=f"<blockquote><b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ <b><u>10 mins</u> 🫥 <i></b>(ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs)</i>.\n\n<b><i>ᴘʟᴇᴀsᴇ ғᴏʀᴡᴀʀᴅ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ᴏʀ ᴀɴy ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ.</i></b></div>")
+        await asyncio.sleep(600)
+        await msg.delete()
+        await k.edit_text("<b>✅ ʏᴏᴜʀ ᴍᴇssᴀɢᴇ ɪs sᴜᴄᴄᴇssғᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ ɪғ ʏᴏᴜ ᴡᴀɴᴛ ᴀɢᴀɪɴ ᴛʜᴇɴ ᴄʟɪᴄᴋ ᴏɴ ʙᴇʟᴏᴡ ʙᴜᴛᴛᴏɴ</b>",reply_markup=InlineKeyboardMarkup(btn))
+        await query.message.delete()
+    
+    elif cb_data == "help":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about')
+        ]]
+        if CLONE_MODE == True:
+            buttons.append([InlineKeyboardButton('ᴄʀᴇᴀᴛᴇ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
+        await query.message.edit_text(
+            text=script.HELP_TXT.format(query.from_user.mention),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data == "about":
+        # Use ABOUT_PICS for the about section
+        about_photo_to_send = random.choice(ABOUT_PICS) if ABOUT_PICS else None
+        
+        about_buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ],[
+            InlineKeyboardButton('ʀᴇǫᴜᴇsᴛ sᴏᴜʀᴄᴇ ᴄᴏᴅᴇ', url=OWNER_LNK) # New button for source code
+        ]]
+        if CLONE_MODE == True:
+            about_buttons.append([InlineKeyboardButton('ᴄʀᴇᴀᴛᴇ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
+
+        if about_photo_to_send:
+            await query.message.edit_media(
+                media=InputMediaPhoto(about_photo_to_send, caption=script.ABOUT_TXT.format(BOT_NAME, BOT_USERNAME, client.mention, OWNER_LNK, SUPPORT_CHAT)),
+                reply_markup=InlineKeyboardMarkup(about_buttons)
+            )
+        else:
+            await query.message.edit_text(
+                text=script.ABOUT_TXT.format(BOT_NAME, BOT_USERNAME, client.mention, OWNER_LNK, SUPPORT_CHAT),
+                reply_markup=InlineKeyboardMarkup(about_buttons),
+                disable_web_page_preview=True,
+                parse_mode=enums.ParseMode.HTML
+            )
+
+    elif cb_data == "home":
+        buttons = [[
+            InlineKeyboardButton('⤬ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ ⤬', url=f'http://t.me/{temp.U_NAME}?startgroup=true')
+        ],[
+            InlineKeyboardButton('ᴇᴀʀɴ ᴍᴏɴᴇʏ', callback_data="shortlink_info"),
+            InlineKeyboardButton('ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ', url=GRP_LNK)
+        ],[
+            InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'),
+            InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about')
+        ]]
+        if PREMIUM_AND_REFERAL_MODE == True:
+            buttons.append([InlineKeyboardButton('ᴘʀᴇᴍɪᴜᴍ ᴀɴᴅ ʀᴇғᴇʀʀᴀʟ', callback_data='subscription')])
+        buttons.append([InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url=CHNL_LNK)])
+        if CLONE_MODE == True:
+            buttons.append([InlineKeyboardButton('ᴄʀᴇᴀᴛᴇ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
+        
+        # Use PICS for the home section (welcome message)
+        home_photo_to_send = random.choice(PICS) if PICS else None
+
+        if home_photo_to_send:
+            await query.message.edit_media(
+                media=InputMediaPhoto(home_photo_to_send, caption=script.START_TXT.format(query.from_user.mention, CHNL_LNK, GRP_LNK)),
+                reply_markup=InlineKeyboardMarkup(buttons)
+            )
+        else:
+            await query.message.edit_text(
+                text=script.START_TXT.format(query.from_user.mention, CHNL_LNK, GRP_LNK),
+                reply_markup=InlineKeyboardMarkup(buttons),
+                disable_web_page_preview=True,
+                parse_mode=enums.ParseMode.HTML
+            )
+    
+    elif cb_data == "clone":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.CLONE_TXT.format(BOT_NAME, BOT_USERNAME, OWNER_LNK, SUPPORT_CHAT),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data == "shortlink_info":
+        buttons = [[
+            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
+            InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help')
+        ],[
+            InlineKeyboardButton('sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url=f'https://t.me/{SUPPORT_CHAT}'),
+            InlineKeyboardButton('ᴏᴡɴᴇʀ', url=OWNER_LNK)
+        ]]
+        await query.message.edit_text(
+            text=script.SHORTLINK_INFO.format(BOT_NAME, BOT_USERNAME, OWNER_LNK, SUPPORT_CHAT),
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data == "subscription":
+        if PREMIUM_AND_REFERAL_MODE == False:
+            return await query.answer("This feature is currently disabled.", show_alert=True)
+        buttons = [            
+            [InlineKeyboardButton("ꜱᴇɴᴅ ᴘᴀʏᴍᴇɴᴛ ʀᴇᴄᴇɪᴘᴛ 🧾", url=OWNER_LNK)],
+            [InlineKeyboardButton("⚠️ ᴄʟᴏsᴇ / ᴅᴇʟᴇᴛᴇ ⚠️", callback_data="close_data")]
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await query.message.edit_media(
+            media=InputMediaPhoto(PAYMENT_QR, caption=PAYMENT_TEXT),
+            reply_markup=reply_markup
+        )
+    
+    elif cb_data == "get_trail":
+        if PREMIUM_AND_REFERAL_MODE == False:
+            return await query.answer("This feature is currently disabled.", show_alert=True)
+        user_id = query.from_user.id
+        if await db.has_premium_access(user_id):
+            return await query.answer("You already have premium access.", show_alert=True)
+        
+        time = "5min" # 5 minutes trial
+        seconds = await get_seconds(time)
+        if seconds > 0:
+            expiry_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
+            user_data = {"id": user_id, "expiry_time": expiry_time} 
+            await db.update_user(user_data)
+            await query.answer(f"You have received a free trial for {time}!", show_alert=True)
+            await query.message.edit_text(f"**You have received a free trial for {time}. Enjoy!**")
+        else:
+            await query.answer("Error providing trial.", show_alert=True)
+
+    elif cb_data == "buy_premium":
+        if PREMIUM_AND_REFERAL_MODE == False:
+            return await query.answer("This feature is currently disabled.", show_alert=True)
+        buttons = [            
+            [InlineKeyboardButton("ꜱᴇɴᴅ ᴘᴀʏᴍᴇɴᴛ ʀᴇᴄᴇɪᴘᴛ 🧾", url=OWNER_LNK)],
+            [InlineKeyboardButton("⚠️ ᴄʟᴏsᴇ / ᴅᴇʟᴇᴛᴇ ⚠️", callback_data="close_data")]
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await query.message.edit_media(
+            media=InputMediaPhoto(PAYMENT_QR, caption=PAYMENT_TEXT),
+            reply_markup=reply_markup
+        )
+
+    elif cb_data.startswith("show_option"):
+        reporter_id = cb_data.split("#")[1]
+        buttons = [[
+            InlineKeyboardButton('Approve Request', callback_data=f'approve_request#{reporter_id}'),
+            InlineKeyboardButton('Decline Request', callback_data=f'decline_request#{reporter_id}')
+        ]]
+        await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+
+    elif cb_data.startswith("approve_request"):
+        reporter_id = cb_data.split("#")[1]
+        try:
+            await client.send_message(chat_id=int(reporter_id), text="**Your request has been approved!**")
+            await query.message.edit_text(f"**Request from {reporter_id} approved.**")
+        except Exception as e:
+            await query.answer(f"Error approving request: {e}", show_alert=True)
+
+    elif cb_data.startswith("decline_request"):
+        reporter_id = cb_data.split("#")[1]
+        try:
+            await client.send_message(chat_id=int(reporter_id), text="**Your request has been declined.**")
+            await query.message.edit_text(f"**Request from {reporter_id} declined.**")
+        except Exception as e:
+            await query.answer(f"Error declining request: {e}", show_alert=True)
+
+    elif cb_data.startswith("killfilesdq"):
+        keyword = cb_data.split("#")[1]
+        await query.message.edit_text(f"<b>Deleting files for query: {keyword}...</b>")
+        deleted_count = 0
+        async for file in get_bad_files(keyword):
+            col.delete_one({'_id': file['_id']})
+            deleted_count += 1
+        await query.message.edit_text(f"<b>Successfully deleted {deleted_count} files for query: {keyword}.</b>")
+
+    elif cb_data.startswith("generate_stream_link"):
+        file_id = cb_data.split(":")[1]
+        files_ = await get_file_details(file_id)
+        if not files_:
+            return await query.answer("File not found!", show_alert=True)
+        
+        file = files_[0] # Assuming get_file_details returns a list of files
+        
+        # Ensure log_msg is defined
+        log_msg = None
+        try:
+            log_msg = await client.send_cached_media(chat_id=LOG_CHANNEL, file_id=file_id)
+        except Exception as e:
+            logger.error(f"Error sending cached media to LOG_CHANNEL for stream link generation: {e}")
+            await query.answer("Failed to generate stream link. Please try again later.", show_alert=True)
+            return
+
+        if not log_msg:
+            await query.answer("Failed to get media from log channel for stream link generation.", show_alert=True)
+            return
+
+        fileName = quote_plus(get_name(log_msg))
+        stream_link = f"{URL}watch/{str(log_msg.id)}/{fileName}?hash={get_hash(log_msg)}"
+        download_link = f"{URL}{str(log_msg.id)}/{fileName}?hash={get_hash(log_msg)}"
+
+        buttons = [[
+            InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ •", url=download_link),
+            InlineKeyboardButton('• ᴡᴀᴛᴄʜ •', url=stream_link)
+        ],[
+            InlineKeyboardButton("• ᴡᴀᴛᴄʜ ɪɴ ᴡᴇʙ ᴀᴘᴘ •", web_app=WebAppInfo(url=stream_link))
+        ]]
+        
+        await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+        await query.answer("Stream links generated!", show_alert=True)
+
+    elif cb_data.startswith("opnsetgrp"):
+        grp_id = int(cb_data.split("#")[1])
+        settings = await get_settings(grp_id)
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                    callback_data=f'setgs#button#{settings["button"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                    callback_data=f'setgs#button#{settings["button"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                    callback_data=f'setgs#file_secure#{settings["file_secure"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                    callback_data=f'setgs#file_secure#{settings["file_secure"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Iᴍᴅʙ',
+                    callback_data=f'setgs#imdb#{settings["imdb"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                    callback_data=f'setgs#imdb#{settings["imdb"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                    callback_data=f'setgs#spell_check#{settings["spell_check"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                    callback_data=f'setgs#spell_check#{settings["spell_check"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                    callback_data=f'setgs#welcome#{settings["welcome"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                    callback_data=f'setgs#welcome#{settings["welcome"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                    callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                    callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                    callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                    callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Mᴀx Bᴜᴛᴛᴏɴs',
+                    callback_data=f'setgs#max_btn#{settings["max_btn"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '10' if settings["max_btn"] else f'{MAX_BTN}',
+                    callback_data=f'setgs#max_btn#{settings["max_btn"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'ShortLink',
+                    callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                    callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{grp_id}',
+                ),
+            ],
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await query.message.edit_text(
+            text=f"<b>Cʜᴀɴɢᴇ Yᴏᴜʀ Sᴇᴛᴛɪɴg's Fᴏʀ {query.message.chat.title} As Yᴏᴜʀ Wɪsʜ ⚙</b>",
+            reply_markup=reply_markup,
+            disable_web_page_preview=True,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    elif cb_data.startswith("opnsetpm"):
+        grp_id = int(cb_data.split("#")[1])
+        settings = await get_settings(grp_id)
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                    callback_data=f'setgs#button#{settings["button"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                    callback_data=f'setgs#button#{settings["button"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                    callback_data=f'setgs#file_secure#{settings["file_secure"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                    callback_data=f'setgs#file_secure#{settings["file_secure"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Iᴍᴅʙ',
+                    callback_data=f'setgs#imdb#{settings["imdb"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                    callback_data=f'setgs#imdb#{settings["imdb"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                    callback_data=f'setgs#spell_check#{settings["spell_check"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                    callback_data=f'setgs#spell_check#{settings["spell_check"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                    callback_data=f'setgs#welcome#{settings["welcome"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                    callback_data=f'setgs#welcome#{settings["welcome"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                    callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                    callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                    callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                    callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'Mᴀx Bᴜᴛᴛᴏɴs',
+                    callback_data=f'setgs#max_btn#{settings["max_btn"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '10' if settings["max_btn"] else f'{MAX_BTN}',
+                    callback_data=f'setgs#max_btn#{settings["max_btn"]}#{grp_id}',
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    'ShortLink',
+                    callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{grp_id}',
+                ),
+                InlineKeyboardButton(
+                    '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                    callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{grp_id}',
+                ),
+            ],
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        try:
+            await client.send_message(
+                chat_id=query.from_user.id,
+                text=f"<b>Cʜᴀɴɢᴇ Yᴏᴜʀ Sᴇᴛᴛɪɴg's Fᴏʀ {query.message.chat.title} As Yᴏᴜʀ Wɪsʜ ⚙</b>",
+                reply_markup=reply_markup,
+                disable_web_page_preview=True,
+                parse_mode=enums.ParseMode.HTML
+            )
+            await query.answer("Opened in PM!", show_alert=True)
+        except Exception as e:
+            await query.answer(f"Error opening in PM: {e}", show_alert=True)
+
+    elif "setgs" in cb_data:
+        _ = cb_data.split("#")
+        settings = await get_settings(int(_[3]))
+        if _[1] == "button":
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                        callback_data=f'setgs#button#{True if settings["button"] else False}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                        callback_data=f'setgs#button#{True if settings["button"] else False}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Iᴍᴅʙ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Mᴀx Bᴜᴛᴛᴏɴs',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10' if settings["max_btn"] else f'{MAX_BTN}',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'ShortLink',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                ],
+            ]
+            await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+            if settings["button"] == True:
+                await save_group_settings(int(_[3]), 'button', False)
+            else:
+                await save_group_settings(int(_[3]), 'button', True)
+
+        elif _[1] == "file_secure":
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                        callback_data=f'setgs#file_secure#{True if settings["file_secure"] else False}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                        callback_data=f'setgs#file_secure#{True if settings["file_secure"] else False}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Iᴍᴅʙ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Mᴀx Bᴜᴛᴛᴏɴs',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10' if settings["max_btn"] else f'{MAX_BTN}',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'ShortLink',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                ],
+            ]
+            await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+            if settings["file_secure"] == True:
+                await save_group_settings(int(_[3]), 'file_secure', False)
+            else:
+                await save_group_settings(int(_[3]), 'file_secure', True)
+
+        elif _[1] == "imdb":
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Iᴍᴅʙ',
+                        callback_data=f'setgs#imdb#{True if settings["imdb"] else False}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                        callback_data=f'setgs#imdb#{True if settings["imdb"] else False}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Mᴀx Bᴜᴛᴛᴏɴs',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10' if settings["max_btn"] else f'{MAX_BTN}',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'ShortLink',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                ],
+            ]
+            await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+            if settings["imdb"] == True:
+                await save_group_settings(int(_[3]), 'imdb', False)
+            else:
+                await save_group_settings(int(_[3]), 'imdb', True)
+
+        elif _[1] == "spell_check":
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Iᴍᴅʙ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                        callback_data=f'setgs#spell_check#{True if settings["spell_check"] else False}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                        callback_data=f'setgs#spell_check#{True if settings["spell_check"] else False}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Mᴀx Bᴜᴛᴛᴏɴs',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10' if settings["max_btn"] else f'{MAX_BTN}',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'ShortLink',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                ],
+            ]
+            await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+            if settings["spell_check"] == True:
+                await save_group_settings(int(_[3]), 'spell_check', False)
+            else:
+                await save_group_settings(int(_[3]), 'spell_check', True)
+
+        elif _[1] == "welcome":
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Iᴍᴅʙ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                        callback_data=f'setgs#welcome#{True if settings["welcome"] else False}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                        callback_data=f'setgs#welcome#{True if settings["welcome"] else False}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Mᴀx Bᴜᴛᴛᴏɴs',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10' if settings["max_btn"] else f'{MAX_BTN}',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'ShortLink',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                ],
+            ]
+            await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+            if settings["welcome"] == True:
+                await save_group_settings(int(_[3]), 'welcome', False)
+            else:
+                await save_group_settings(int(_[3]), 'welcome', True)
+
+        elif _[1] == "auto_delete":
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Iᴍᴅʙ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                        callback_data=f'setgs#auto_delete#{True if settings["auto_delete"] else False}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_delete#{True if settings["auto_delete"] else False}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Mᴀx Bᴜᴛᴛᴏɴs',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10' if settings["max_btn"] else f'{MAX_BTN}',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'ShortLink',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                ],
+            ]
+            await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+            if settings["auto_delete"] == True:
+                await save_group_settings(int(_[3]), 'auto_delete', False)
+            else:
+                await save_group_settings(int(_[3]), 'auto_delete', True)
+
+        elif _[1] == "auto_ffilter":
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Iᴍᴅʙ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                        callback_data=f'setgs#auto_ffilter#{True if settings["auto_ffilter"] else False}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_ffilter#{True if settings["auto_ffilter"] else False}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Mᴀx Bᴜᴛᴛᴏɴs',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10' if settings["max_btn"] else f'{MAX_BTN}',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'ShortLink',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                ],
+            ]
+            await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+            if settings["auto_ffilter"] == True:
+                await save_group_settings(int(_[3]), 'auto_ffilter', False)
+            else:
+                await save_group_settings(int(_[3]), 'auto_ffilter', True)
+
+        elif _[1] == "max_btn":
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Iᴍᴅʙ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Mᴀx Bᴜᴛᴛᴏɴs',
+                        callback_data=f'setgs#max_btn#{True if settings["max_btn"] else False}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10' if settings["max_btn"] else f'{MAX_BTN}',
+                        callback_data=f'setgs#max_btn#{True if settings["max_btn"] else False}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'ShortLink',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                        callback_data=f'setgs#is_shortlink#{settings["is_shortlink']}#{_[3]}',
+                    ),
+                ],
+            ]
+            await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+            if settings["max_btn"] == True:
+                await save_group_settings(int(_[3]), 'max_btn', False)
+            else:
+                await save_group_settings(int(_[3]), 'max_btn', True)
+
+        elif _[1] == "is_shortlink":
+            buttons = [
+                [
+                    InlineKeyboardButton(
+                        'Rᴇsᴜʟᴛ Pᴀɢᴇ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        'Bᴜᴛᴛᴏɴ' if settings["button"] else 'Tᴇxᴛ',
+                        callback_data=f'setgs#button#{settings["button"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Pʀᴏᴛᴇᴄᴛ Cᴏɴᴛᴇɴᴛ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["file_secure"] else '✘ Oғғ',
+                        callback_data=f'setgs#file_secure#{settings["file_secure"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Iᴍᴅʙ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["imdb"] else '✘ Oғғ',
+                        callback_data=f'setgs#imdb#{settings["imdb"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Sᴘᴇʟʟ Cʜᴇᴄᴋ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["spell_check"] else '✘ Oғғ',
+                        callback_data=f'setgs#spell_check#{settings["spell_check"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Wᴇʟᴄᴏᴍᴇ Msɢ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["welcome"] else '✘ Oғғ',
+                        callback_data=f'setgs#welcome#{settings["welcome"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Dᴇʟᴇᴛᴇ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10 Mɪɴs' if settings["auto_delete"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_delete#{settings["auto_delete"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Aᴜᴛᴏ-Fɪʟᴛᴇʀ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["auto_ffilter"] else '✘ Oғғ',
+                        callback_data=f'setgs#auto_ffilter#{settings["auto_ffilter"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'Mᴀx Bᴜᴛᴛᴏɴs',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '10' if settings["max_btn"] else f'{MAX_BTN}',
+                        callback_data=f'setgs#max_btn#{settings["max_btn"]}#{_[3]}',
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        'ShortLink',
+                        callback_data=f'setgs#is_shortlink#{True if settings["is_shortlink"] else False}#{_[3]}',
+                    ),
+                    InlineKeyboardButton(
+                        '✔ Oɴ' if settings["is_shortlink"] else '✘ Oғғ',
+                        callback_data=f'setgs#is_shortlink#{True if settings["is_shortlink"] else False}#{_[3]}',
+                    ),
+                ],
+            ]
+            await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+            if settings["is_shortlink"] == True:
+                await save_group_settings(int(_[3]), 'is_shortlink', False)
+            else:
+                await save_group_settings(int(_[3]), 'is_shortlink', True)
