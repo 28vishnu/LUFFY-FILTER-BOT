@@ -665,7 +665,8 @@ async def get_cap(settings, remaining_seconds, files, query, total_results, sear
                     kind=imdb['kind'],
                     imdb_id=imdb["imdb_id"],
                     cast=imdb["cast"],
-                    runtime=imdb["runtimes"][0] if imdb["runtimes"] else "N/A",
+                    # Safely access runtimes, providing "N/A" if empty or not found
+                    runtime=imdb["runtimes"][0] if imdb.get("runtimes") and len(imdb["runtimes"]) > 0 else "N/A",
                     countries=imdb["countries"],
                     certificates=imdb["certificates"],
                     languages=imdb["languages"],
