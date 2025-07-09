@@ -50,6 +50,9 @@ from Script import script
 from plugins import web_server
 from plugins.clone import restart_bots
 
+# Import cleanup and index functions from ia_filterdb
+from database.ia_filterdb import remove_duplicate_files, ensure_indexes
+
 # Assuming TechVJ is a package/directory at the same level as bot.py and plugins
 # If TechVJ.bot or TechVJ.util.keepalive do not exist, these imports will fail.
 # Based on the user's traceback, it seems TechVJ is a valid path.
@@ -67,6 +70,17 @@ async def start():
     print('\n')
     print('Initalizing Your Bot')
 
+    # CRITICAL: Clean duplicates and ensure indexes before bot starts
+    try:
+        await remove_duplicate_files()
+        await ensure_indexes()
+        logger.info("Database cleanup and index setup complete.")
+    except Exception as e:
+        logger.error(f"Error during database cleanup or index setup: {e}")
+        # If database setup fails, the bot likely won't function correctly.
+        # Consider exiting or raising a more critical error here.
+        sys.exit(1) # Exit if database setup fails critically
+
     # Start the bot client with FloodWait handling
     try:
         await TechVJBot.start()
@@ -76,7 +90,7 @@ async def start():
         await asyncio.sleep(e.value + 5) # Add a small buffer to the wait time
         # The most robust solution is setting sleep_threshold in the Client init itself (in TechVJ/bot.py).
         # This specific handler is for initial startup issues.
-        return # Exit this attempt and let the outer loop handle retry if needed, or main block will catch.
+        sys.exit(1) # Exit if bot fails to start after flood wait
     except Exception as e:
         logger.exception(f"An error occurred during bot startup: {e}")
         # If the bot fails to start, it's better to log and exit or retry based on deployment strategy.
