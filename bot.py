@@ -62,20 +62,7 @@ from TechVJ.bot.clients import initialize_clients
 # where `TechVJBot` is actually initialized (likely in TechVJ/bot.py).
 # This is the primary way to handle FloodWait errors effectively.
 #
-# Ensure that file (e.g., TechVJ/bot.py) includes:
-#
-# from pyrogram import Client
-# from info import API_ID, API_HASH, BOT_TOKEN, SLEEP_THRESHOLD # Make sure SLEEP_THRESHOLD is imported here
-#
-# TechVJBot = Client(
-#     "TechVJBot",
-#     api_id=API_ID,
-#     api_hash=API_HASH,
-#     bot_token=BOT_TOKEN,
-#     plugins=dict(root="plugins"), # Adjust if your plugins path is different
-#     sleep_threshold=SLEEP_THRESHOLD # <--- THIS LINE IS ABSOLUTELY ESSENTIAL
-#     # Add any other parameters your Client initialization might have
-# )
+# Refer to the "CRITICAL: Update for TechVJ/bot.py" immersive artifact above for details.
 # --- END CRITICAL IMPORTANT REMINDER ---
 
 ppath = "plugins/*.py"
