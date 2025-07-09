@@ -59,7 +59,7 @@ async def pub_is_subscribed(bot, query, channel):
                 [InlineKeyboardButton(f'Join {chat.title}', url=chat.invite_link)]
             )
         except Exception as e:
-            pass
+            logger.error(f"Error checking public subscription for {id}: {e}")
     return btn
 
 async def is_subscribed(bot, query):
@@ -200,13 +200,14 @@ async def broadcast_messages_group(chat_id, message):
         kd = await message.copy(chat_id=chat_id)
         try:
             await kd.pin()
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Error pinning message in group {chat_id}: {e}")
         return True, "Success"
     except FloodWait as e:
         await asyncio.sleep(e.x)
         return await broadcast_messages_group(chat_id, message)
     except Exception as e:
+        logger.error(f"Error broadcasting to group {chat_id}: {e}")
         return False, "Error"
     
 async def search_gagala(text):
@@ -216,14 +217,29 @@ async def search_gagala(text):
         }
     text = text.replace(" ", '+')
     url = f'https://www.google.com/search?q={text}'
-    response = requests.get(url, headers=usr_agent)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, 'html.parser')
-    titles = soup.find_all( 'h3' )
-    return [title.getText() for title in titles]
+    try:
+        response = requests.get(url, headers=usr_agent)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        titles = soup.find_all( 'h3' )
+        return [title.getText() for title in titles]
+    except Exception as e:
+        logger.error(f"Error searching Google: {e}")
+        return []
 
 async def get_settings(group_id):
     settings = await db.get_settings(group_id)
+    # Ensure default settings are present if not in DB
+    default_settings = {
+        'imdb': False, # Assuming default is off
+        'is_shortlink': False,
+        'shortlink': SHORTLINK_URL,
+        'shortlink_api': SHORTLINK_API,
+        'tutorial': IS_TUTORIAL # Assuming default is from info.py
+    }
+    for key, default_value in default_settings.items():
+        if key not in settings:
+            settings[key] = default_value
     return settings
     
 async def save_group_settings(group_id, key, value):
@@ -262,6 +278,7 @@ def get_file_id(msg: Message):
             if obj:
                 setattr(obj, "message_type", message_type)
                 return obj
+    return None # Return None if no media found
 
 def extract_user(message: Message) -> Union[int, str]:
     user_id = None
@@ -389,7 +406,8 @@ def gfilterparser(text, keyword):
 
     try:
         return note_data, buttons, alerts
-    except:
+    except Exception as e:
+        logger.error(f"Error in gfilterparser: {e}")
         return note_data, buttons, None
 
 def parser(text, keyword):
@@ -442,7 +460,8 @@ def parser(text, keyword):
 
     try:
         return note_data, buttons, alerts
-    except:
+    except Exception as e:
+        logger.error(f"Error in parser: {e}")
         return note_data, buttons, None
 
 def remove_escapes(text: str) -> str:
@@ -472,20 +491,26 @@ def humanbytes(size):
 
 async def get_clone_shortlink(link, url, api):
     shortzy = Shortzy(api_key=api, base_site=url)
-    link = await shortzy.convert(link)
-    return link
+    try:
+        link = await shortzy.convert(link)
+        return link
+    except Exception as e:
+        logger.error(f"Error converting clone shortlink: {e}")
+        return link # Return original link on error
                            
 async def get_shortlink(chat_id, link):
     settings = await get_settings(chat_id)
-    if 'shortlink' in settings.keys():
-        URL = settings['shortlink']
-        API = settings['shortlink_api']
+    if 'is_shortlink' in settings.keys() and settings['is_shortlink']:
+        URL = settings.get('shortlink', SHORTLINK_URL)
+        API = settings.get('shortlink_api', SHORTLINK_API)
     else:
         URL = SHORTLINK_URL
         API = SHORTLINK_API
+        
     if URL.startswith("shorturllink") or URL.startswith("terabox.in") or URL.startswith("urlshorten.in"):
         URL = SHORTLINK_URL
         API = SHORTLINK_API
+    
     if URL == "api.shareus.io":
         url = f'https://{URL}/easy_api'
         params = {
@@ -498,16 +523,20 @@ async def get_shortlink(chat_id, link):
                     data = await response.text()
                     return data
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error with shareus.io shortlink: {e}")
             return link
     else:
-        shortzy = Shortzy(api_key=API, base_site=URL)
-        link = await shortzy.convert(link)
-        return link
+        try:
+            shortzy = Shortzy(api_key=API, base_site=URL)
+            link = await shortzy.convert(link)
+            return link
+        except Exception as e:
+            logger.error(f"Error converting shortlink with Shortzy: {e}")
+            return link # Return original link on error
     
 async def get_tutorial(chat_id):
     settings = await get_settings(chat_id)
-    return settings['tutorial']
+    return settings.get('tutorial', IS_TUTORIAL) # Default to IS_TUTORIAL from info.py
         
 async def get_verify_shorted_link(link, url, api):
     API = api
@@ -524,12 +553,16 @@ async def get_verify_shorted_link(link, url, api):
                     data = await response.text()
                     return data
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error with shareus.io verify shortlink: {e}")
             return link
     else:
-        shortzy = Shortzy(api_key=API, base_site=URL)
-        link = await shortzy.convert(link)
-        return link
+        try:
+            shortzy = Shortzy(api_key=API, base_site=URL)
+            link = await shortzy.convert(link)
+            return link
+        except Exception as e:
+            logger.error(f"Error converting verify shortlink with Shortzy: {e}")
+            return link
         
 async def check_token(bot, userid, token):
     user = await bot.get_users(userid)
@@ -592,7 +625,7 @@ async def check_verification(bot, userid):
     
 async def send_all(bot, userid, files, ident, chat_id, user_name, query):
     settings = await get_settings(chat_id)
-    if 'is_shortlink' in settings.keys():
+    if 'is_shortlink' in settings.keys() and settings['is_shortlink']:
         ENABLE_SHORTLINK = settings['is_shortlink']
     else:
         await save_group_settings(chat_id, 'is_shortlink', False) 
@@ -602,103 +635,164 @@ async def send_all(bot, userid, files, ident, chat_id, user_name, query):
             for file in files:
                 title = file["file_name"]
                 size = get_size(file["file_size"])
+                # Check if SHORTLINK_MODE is True from info.py and user is not premium
                 if not await db.has_premium_access(userid) and SHORTLINK_MODE == True:
-                    await bot.send_message(chat_id=userid, text=f"<b>Hᴇʏ ᴛʜᴇʀᴇ {user_name} 👋🏽 \n\n✅ Sᴇᴄᴜʀᴇ ʟɪɴᴋ ᴛᴏ ʏᴏᴜʀ ғɪʟᴇ ʜᴀs sᴜᴄᴄᴇssғᴜʟʟʏ ʙᴇᴇɴ ɢᴇɴᴇʀᴀᴛᴇᴅ ᴘʟᴇᴀsᴇ ᴄʟɪᴄᴋ ᴅᴏᴡɴʟᴏᴀᴅ ʙᴜᴛᴛᴏɴ\n\n🗃️ Fɪʟᴇ Nᴀᴍᴇ : {title}\n🔖 Fɪʟᴇ Sɪᴢᴇ : {size}</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📤 Dᴏᴡɴʟᴏᴀᴅ 📥", url=await get_shortlink(chat_id, f"https://telegram.me/{temp.U_NAME}?start=files_{file['file_id']}"))]]))
-        else:
-            for file in files:
-                f_caption = file["caption"]
-                title = file["file_name"]
-                size = get_size(file["file_size"])
-                if CUSTOM_FILE_CAPTION:
-                    try:
-                        f_caption = CUSTOM_FILE_CAPTION.format(
-                            file_name='' if title is None else title,
-                            file_size='' if size is None else size,
-                            file_caption='' if f_caption is None else f_caption
+                    await bot.send_message(chat_id=userid, text=f"<b>Hᴇʏ ᴛʜᴇʀᴇ {user_name} 👋🏽 \n\n✅ Sᴇᴄᴜʀᴇ ʟɪɴᴋ ᴛᴏ ʏᴏᴜʀ ғɪʟᴇ ʜᴀs sᴜᴄᴄᴇssғᴜʟʟʏ ʙᴇᴇɴ ɢᴇɴᴇʀᴀᴛᴇᴅ ᴘʟᴇᴀsᴇ ᴄʟɪᴄᴋ ᴅᴏᴡɴʟᴏᴀᴅ ʙᴜᴛᴛᴏɴ\n\n🗃️ Fɪʟᴇ Nᴀᴍᴇ : {title}\n🔖 Fɪʟᴇ Sɪᴢᴇ : {size}</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📤 Dᴏᴡɴʟᴏᴀᴅ 📥", url=await get_shortlink(chat_id, f"https://telegram.me/{temp.U_NAME}?start=files_{file['_id']}"))]]))
+                else: # If shortlink is not enabled or user is premium, send direct file
+                    f_caption = file.get("caption", "") # Use .get with default for safety
+                    if CUSTOM_FILE_CAPTION:
+                        try:
+                            f_caption = CUSTOM_FILE_CAPTION.format(
+                                file_name='' if title is None else title,
+                                file_size='' if size is None else size,
+                                file_caption='' if f_caption is None else f_caption
+                            )
+                        except Exception as e:
+                            logger.error(f"Error formatting custom caption: {e}")
+                            f_caption = f_caption # Fallback to original
+                    if not f_caption: # If caption is still empty
+                        f_caption = f"{title}"
+
+                    # Determine media type and use appropriate send method
+                    if file.get('file_type') == 'document':
+                        await bot.send_document(
+                            chat_id=userid,
+                            document=file["file_id"],
+                            file_ref=bytes.fromhex(file["file_ref"]) if file.get("file_ref") else None,
+                            caption=f_caption,
+                            protect_content=True if ident == "filep" else False,
+                            reply_markup=InlineKeyboardMarkup(
+                                [[
+                                    InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=GRP_LNK),
+                                    InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=CHNL_LNK)
+                                ],[
+                                    InlineKeyboardButton("Bᴏᴛ Oᴡɴᴇʀ", url=OWNER_LNK)
+                                ]]
+                            )
                         )
-                    except Exception as e:
-                        print(e)
-                        f_caption = f_caption
-                if f_caption is None:
-                    f_caption = f"{title}"
-                await bot.send_cached_media(
-                    chat_id=userid,
-                    file_id=file["file_id"],
-                    caption=f_caption,
-                    protect_content=True if ident == "filep" else False,
-                    reply_markup=InlineKeyboardMarkup(
-                        [[
-                            InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=GRP_LNK),
-                            InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=CHNL_LNK)
-                        ],[
-                            InlineKeyboardButton("Bᴏᴛ Oᴡɴᴇʀ", url=OWNER_LNK)
-                        ]]
-                    )
-                )
+                    elif file.get('file_type') == 'video':
+                        await bot.send_video(
+                            chat_id=userid,
+                            video=file["file_id"],
+                            file_ref=bytes.fromhex(file["file_ref"]) if file.get("file_ref") else None,
+                            caption=f_caption,
+                            protect_content=True if ident == "filep" else False,
+                            reply_markup=InlineKeyboardMarkup(
+                                [[
+                                    InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=GRP_LNK),
+                                    InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=CHNL_LNK)
+                                ],[
+                                    InlineKeyboardButton("Bᴏᴛ Oᴡɴᴇʀ", url=OWNER_LNK)
+                                ]]
+                            )
+                        )
+                    elif file.get('file_type') == 'photo':
+                        await bot.send_photo(
+                            chat_id=userid,
+                            photo=file["file_id"],
+                            file_ref=bytes.fromhex(file["file_ref"]) if file.get("file_ref") else None,
+                            caption=f_caption,
+                            protect_content=True if ident == "filep" else False,
+                            reply_markup=InlineKeyboardMarkup(
+                                [[
+                                    InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=GRP_LNK),
+                                    InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=CHNL_LNK)
+                                ],[
+                                    InlineKeyboardButton("Bᴏᴛ Oᴡɴᴇʀ", url=OWNER_LNK)
+                                ]]
+                            )
+                        )
+                    else: # Fallback to send_cached_media for other types or if type is unknown
+                        await bot.send_cached_media(
+                            chat_id=userid,
+                            file_id=file["file_id"],
+                            file_ref=bytes.fromhex(file["file_ref"]) if file.get("file_ref") else None,
+                            caption=f_caption,
+                            protect_content=True if ident == "filep" else False,
+                            reply_markup=InlineKeyboardMarkup(
+                                [[
+                                    InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=GRP_LNK),
+                                    InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=CHNL_LNK)
+                                ],[
+                                    InlineKeyboardButton("Bᴏᴛ Oᴡɴᴇʀ", url=OWNER_LNK)
+                                ]]
+                            )
+                        )
     except UserIsBlocked:
         await query.answer('Uɴʙʟᴏᴄᴋ ᴛʜᴇ ʙᴏᴛ ᴍᴀʜɴ !', show_alert=True)
     except PeerIdInvalid:
         await query.answer('Hᴇʏ, Sᴛᴀʀᴛ Bᴏᴛ Fɪʀsᴛ Aɴᴅ Cʟɪᴄᴋ Sᴇɴᴅ Aʟʟ', show_alert=True)
     except Exception as e:
+        logger.error(f"Error in send_all function: {e}")
         await query.answer('Hᴇʏ, Sᴛᴀʀᴛ Bᴏᴛ Fɪʀsᴛ Aɴᴅ Cʟɪᴄᴋ Sᴇɴᴅ Aʟʟ', show_alert=True)
         
 async def get_cap(settings, remaining_seconds, files, query, total_results, search):
+    # This `get_cap` is from utils.py, which is for generating search result captions.
+    # The `get_cap` in pm_filter.py (for individual file captions) is simpler.
+    # Ensure this one correctly formats search results.
+    
     if settings["imdb"]:
         IMDB_CAP = temp.IMDB_CAP.get(query.from_user.id)
         if IMDB_CAP:
             cap = IMDB_CAP
             cap+="<b>\n\n<u>🍿 Your Movie Files 👇</u></b>\n\n"
             for file in files:
-                cap += f"<b>📁 <a href='https://telegram.me/{temp.U_NAME}?start=files_{file['file_id']}'>[{get_size(file['file_size'])}] {' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file['file_name'].split()))}\n\n</a></b>"
+                # Assuming file['file_id'] is the Telegram file_id
+                # and file['file_name'] is the original file name
+                display_file_name = ' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file['file_name'].split()))
+                cap += f"<b>📁 <a href='https://telegram.me/{temp.U_NAME}?start=files_{file['_id']}'>[{get_size(file['file_size'])}] {display_file_name}\n\n</a></b>"
         else:
-            imdb = await get_poster(search, file=(files[0])["file_name"]) if settings["imdb"] else None
-            if imdb:
+            imdb_info = await get_poster(search, file=(files[0])["file_name"]) if settings["imdb"] else None
+            if imdb_info:
                 TEMPLATE = script.IMDB_TEMPLATE_TXT
                 cap = TEMPLATE.format(
                     qurey=search,
-                    title=imdb['title'],
-                    votes=imdb['votes'],
-                    aka=imdb["aka"],
-                    seasons=imdb["seasons"],
-                    box_office=imdb['box_office'],
-                    localized_title=imdb['localized_title'],
-                    kind=imdb['kind'],
-                    imdb_id=imdb["imdb_id"],
-                    cast=imdb["cast"],
+                    title=imdb_info.get('title', 'N/A'),
+                    votes=imdb_info.get('votes', 'N/A'),
+                    aka=imdb_info.get("aka", 'N/A'),
+                    seasons=imdb_info.get("seasons", 'N/A'),
+                    box_office=imdb_info.get('box_office', 'N/A'),
+                    localized_title=imdb_info.get('localized_title', 'N/A'),
+                    kind=imdb_info.get("kind", 'N/A'),
+                    imdb_id=imdb_info.get("imdb_id", 'N/A'),
+                    cast=imdb_info.get("cast", 'N/A'),
                     # Safely access runtimes, providing "N/A" if empty or not found
-                    runtime=imdb["runtimes"][0] if imdb.get("runtimes") and len(imdb["runtimes"]) > 0 else "N/A",
-                    countries=imdb["countries"],
-                    certificates=imdb["certificates"],
-                    languages=imdb["languages"],
-                    director=imdb["director"],
-                    writer=imdb["writer"],
-                    producer=imdb["producer"],
-                    composer=imdb["composer"],
-                    cinematographer=imdb["cinematographer"],
-                    music_team=imdb["music_team"],
-                    distributors=imdb["distributors"],
-                    release_date=imdb['release_date'],
-                    year=imdb['year'],
-                    genres=imdb['genres'],
-                    poster=imdb['poster'],
-                    plot=imdb['plot'],
-                    rating=imdb['rating'],
-                    url=imdb['url'],
+                    runtime=imdb_info.get("runtime", 'N/A'), # Assuming get_poster now returns a string
+                    countries=imdb_info.get("countries", 'N/A'),
+                    certificates=imdb_info.get("certificates", 'N/A'),
+                    languages=imdb_info.get("languages", 'N/A'),
+                    director=imdb_info.get("director", 'N/A'),
+                    writer=imdb_info.get("writer", 'N/A'),
+                    producer=imdb_info.get("producer", 'N/A'),
+                    composer=imdb_info.get("composer", 'N/A'),
+                    cinematographer=imdb_info.get("cinematographer", 'N/A'),
+                    music_team=imdb_info.get("music_team", 'N/A'),
+                    distributors=imdb_info.get("distributors", 'N/A'),
+                    release_date=imdb_info.get('release_date', 'N/A'),
+                    year=imdb_info.get('year', 'N/A'),
+                    genres=imdb_info.get('genres', 'N/A'),
+                    poster=imdb_info.get('poster', 'N/A'),
+                    plot=imdb_info.get('plot', 'N/A'),
+                    rating=imdb_info.get('rating', 'N/A'),
+                    url=imdb_info.get('url', 'N/A'),
                     **locals()
                 )
                 cap+="<b>\n\n<u>🍿 Your Movie Files 👇</u></b>\n\n"
                 for file in files:
-                    cap += f"<b>📁 <a href='https://telegram.me/{temp.U_NAME}?start=files_{file['file_id']}'>[{get_size(file['file_size'])}] {' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file['file_name'].split()))}\n\n</a></b>"
+                    display_file_name = ' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file['file_name'].split()))
+                    cap += f"<b>📁 <a href='https://telegram.me/{temp.U_NAME}?start=files_{file['_id']}'>[{get_size(file['file_size'])}] {display_file_name}\n\n</a></b>"
             else:
                 cap = f"<b>Tʜᴇ Rᴇꜱᴜʟᴛꜱ Fᴏʀ ☞ {search}\n\nRᴇǫᴜᴇsᴛᴇᴅ Bʏ ☞ {query.from_user.mention}\n\nʀᴇsᴜʟᴛ sʜᴏᴡ ɪɴ ☞ {remaining_seconds} sᴇᴄᴏɴᴅs\n\nᴘᴏᴡᴇʀᴇᴅ ʙʏ ☞ : {query.message.chat.title}\n\n⚠️ ᴀꜰᴛᴇʀ 5 ᴍɪɴᴜᴛᴇꜱ ᴛʜɪꜱ ᴍᴇꜱꜱᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟY ᴅᴇʟᴇᴛᴇᴅ 🗑️\n\n</b>"
                 cap+="<b><u>🍿 Your Movie Files 👇</u></b>\n\n"
                 for file in files:
-                    cap += f"<b>📁 <a href='https://telegram.me/{temp.U_NAME}?start=files_{file['file_id']}'>[{get_size(file['file_size'])}] {' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file['file_name'].split()))}\n\n</a></b>"
+                    display_file_name = ' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file['file_name'].split()))
+                    cap += f"<b>📁 <a href='https://telegram.me/{temp.U_NAME}?start=files_{file['_id']}'>[{get_size(file['file_size'])}] {display_file_name}\n\n</a></b>"
     else:
         cap = f"<b>Tʜᴇ Rᴇꜱᴜʟᴛꜱ Fᴏʀ ☞ {search}\n\nRᴇǫᴜᴇsᴛᴇᴅ Bʏ ☞ {query.from_user.mention}\n\nʀᴇsᴜʟᴛ sʜᴏᴡ ɪɴ ☞ {remaining_seconds} sᴇᴄᴏɴᴅs\n\nᴘᴏᴡᴇʀᴇᴅ ʙʏ ☞ : {query.message.chat.title} \n\n⚠️ ᴀꜰᴛᴇʀ 5 ᴍɪɴᴜᴛᴇꜱ ᴛʜɪꜱ ᴍᴇꜱꜱᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟY ᴅᴇʟᴇᴛᴇᴅ 🗑️\n\n</b>"
         cap+="<b><u>🍿 Your Movie Files 👇</u></b>\n\n"
         for file in files:
-            cap += f"<b>📁 <a href='https://telegram.me/{temp.U_NAME}?start=files_{file['file_id']}'>[{get_size(file['file_size'])}] {' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file['file_name'].split()))}\n\n</a></b>"
+            display_file_name = ' '.join(filter(lambda x: not x.startswith('[') and not x.startswith('@') and not x.startswith('www.'), file['file_name'].split()))
+            cap += f"<b>📁 <a href='https://telegram.me/{temp.U_NAME}?start=files_{file['_id']}'>[{get_size(file['file_size'])}] {display_file_name}\n\n</a></b>"
     return cap
 
 
@@ -729,3 +823,4 @@ async def get_seconds(time_string):
         return value * 86400 * 365
     else:
         return 0
+
