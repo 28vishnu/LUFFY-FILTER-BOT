@@ -2,355 +2,312 @@
 # Subscribe YouTube Channel For Amazing Bot @Tech_VJ
 # Ask Doubt on telegram @KingVJ01
 
-import re
-import os
+import re, base64, json
+from struct import pack
+from pyrogram.file_id import FileId, FileType
+from motor.motor_asyncio import AsyncIOMotorClient # Import AsyncIOMotorClient
+from pymongo import ASCENDING
+from pymongo.errors import DuplicateKeyError, OperationFailure
+from bson.objectid import ObjectId # Import ObjectId for querying by _id
 import asyncio
-import time
 import logging
-from pyrogram import filters, Client
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
-from pyrogram.enums import MessageEntityType, ChatMemberStatus
-from pyrogram.errors import FloodWait, UserNotParticipant, PeerIdInvalid, ChannelInvalid
 
-from database.users_chats_db import db
-from database.ia_filterdb import get_search_results, save_file, get_file_details, col, sec_col
-from utils import get_size, is_subscribed, get_poster, get_genres, get_cap, temp # Removed get_name
-from info import (
-    BOT_USERNAME, FORCE_SUB_MODE, AUTH_CHANNEL, SUPPORT_CHAT,
-    CHANNELS, ADMINS, CUSTOM_FILE_CAPTION, PICS, IMDB, IMDB_TEMPLATE,
-    LONG_IMDB_DESCRIPTION, SPELL_CHECK_REPLY, PM_SEARCH_MODE, BUTTON_MODE, MAX_BTN,
-    AUTO_FFILTER, PREMIUM_AND_REFERAL_MODE, REFERAL_COUNT, REFERAL_PREMEIUM_TIME,
-    PAYMENT_QR, PAYMENT_TEXT, MELCOW_NEW_USERS, REQUEST_TO_JOIN_MODE,
-    TRY_AGAIN_BTN, STREAM_MODE, SHORTLINK_MODE, SHORTLINK_URL, SHORTLINK_API,
-    IS_TUTORIAL, TUTORIAL, VERIFY_TUTORIAL, MULTI_CLIENT, BOT_ID, BOT_NAME,
-    PING_INTERVAL, URL, RENAME_MODE, AUTO_APPROVE_MODE, REACTIONS,
-    VERIFY_SECOND_SHORTNER, VERIFY_SND_SHORTLINK_API, VERIFY_SND_SHORTLINK_URL,
-    VERIFY_SHORTLINK_API, VERIFY_SHORTLINK_URL, MSG_ALRT, LANGUAGES, YEARS
-)
-from Script import script
+from info import FILE_DB_URI, SEC_FILE_DB_URI, DATABASE_NAME, COLLECTION_NAME, MULTIPLE_DATABASE, USE_CAPTION_FILTER, MAX_BTN
 
 logger = logging.getLogger(__name__)
 
-FLOOD_CAPS = {} # To store flood wait times for users
+# First Database For File Saving 
+# Use AsyncIOMotorClient for asynchronous operations
+client = AsyncIOMotorClient(FILE_DB_URI)
+db = client[DATABASE_NAME]
+col = db[COLLECTION_NAME]
 
-@Client.on_message(filters.command(["start", "help"]) & filters.private)
-async def start_and_help(client: Client, message: Message):
-    if not await db.is_user_exist(message.from_user.id):
-        await db.add_user(message.from_user.id, message.from_user.full_name)
-        if MELCOW_NEW_USERS:
-            try:
-                await client.send_message(
-                    LOG_CHANNEL,
-                    f"#NEW_USER: {message.from_user.first_name} {message.from_user.last_name or ''}\nID: {message.from_user.id}\nUsername: @{message.from_user.username or 'None'}\nDate: {message.date}"
-                )
-            except Exception as e:
-                logger.error(f"Error sending new user log to LOG_CHANNEL: {e}")
-    
-    # Check force subscribe
-    if FORCE_SUB_MODE:
-        try:
-            user_status = await client.get_chat_member(AUTH_CHANNEL, message.from_user.id)
-            if user_status.status in [ChatMemberStatus.BANNED, ChatMemberStatus.LEFT]:
-                raise UserNotParticipant
-        except UserNotParticipant:
-            btn = [[InlineKeyboardButton(text="😇 Join Updates Channel 😇", url=f"https://t.me/{AUTH_CHANNEL}")]]
-            if SUPPORT_CHAT:
-                btn.append([InlineKeyboardButton(text="⭕ Support Group ⭕", url=f"https://t.me/{SUPPORT_CHAT}")])
-            return await message.reply_text(
-                text=script.JOIN_GROUP_ALERT.format(message.from_user.first_name),
-                reply_markup=InlineKeyboardMarkup(btn),
-                disable_web_page_preview=True
-            )
-        except (PeerIdInvalid, ChannelInvalid) as e:
-            logger.error(f"Force subscribe channel invalid: {e}")
-            # Continue without force sub if channel is invalid
-        except Exception as e:
-            logger.error(f"Error checking force subscribe: {e}")
-            # Continue without force sub if other error
+# Second Database For File Saving (if enabled)
+sec_client = None
+sec_db = None
+sec_col = None
+if MULTIPLE_DATABASE:
+    sec_client = AsyncIOMotorClient(SEC_FILE_DB_URI)
+    sec_db = sec_client[DATABASE_NAME]
+    sec_col = sec_db[COLLECTION_NAME]
 
-    btn = [[
-        InlineKeyboardButton("🔎 Search Inline 🔍", switch_inline_query_current_chat=""),
-        InlineKeyboardButton("⚙️ Settings ⚙️", callback_data="settings")
-    ]]
-    if ADMINS and message.from_user.id in ADMINS:
-        btn.append([InlineKeyboardButton("👨‍💻 Admin Panel 👨‍�", callback_data="admin_panel")])
-    
+
+async def ensure_indexes():
+    """Ensures necessary indexes are created on the collections."""
     try:
-        await message.reply_photo(
-            photo=PICS,
-            caption=script.START_TXT.format(message.from_user.first_name, BOT_NAME),
-            reply_markup=InlineKeyboardMarkup(btn)
-        )
+        # Create text index for file_name for search functionality
+        await col.create_index([("file_name", "text")], name="file_name_text_index", background=True)
+        logger.info("Text index 'file_name_text_index' created on primary collection.")
+    except OperationFailure as e:
+        logger.warning(f"Failed to create text index on primary collection: {e}")
     except Exception as e:
-        logger.error(f"Error sending start photo/message: {e}")
-        await message.reply_text(
-            caption=script.START_TXT.format(message.from_user.first_name, BOT_NAME),
-            reply_markup=InlineKeyboardMarkup(btn)
+        logger.error(f"Unexpected error creating text index on primary collection: {e}")
+
+    try:
+        # Create unique index on file_id to prevent duplicates
+        # Use background=True to build in the background without blocking
+        # Use sparse=True so that documents without 'file_id' field are not indexed
+        await col.create_index([("file_id", ASCENDING)], unique=True, background=True, sparse=True)
+        logger.info("Unique index 'file_id_1' created on primary collection.")
+    except OperationFailure as e:
+        # This will catch if the index already exists or if there are duplicates preventing creation
+        logger.warning(f"Failed to create unique index on primary collection 'file_id_1': {e}. "
+                       "This might mean duplicates exist or index already present.")
+    except Exception as e:
+        logger.error(f"Unexpected error creating unique index on primary collection: {e}")
+
+    if MULTIPLE_DATABASE and sec_col:
+        try:
+            await sec_col.create_index([("file_name", "text")], name="sec_file_name_text_index", background=True)
+            logger.info("Text index 'sec_file_name_text_index' created on secondary collection.")
+        except OperationFailure as e:
+            logger.warning(f"Failed to create text index on secondary collection: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error creating text index on secondary collection: {e}")
+
+        try:
+            await sec_col.create_index([("file_id", ASCENDING)], unique=True, background=True, sparse=True)
+            logger.info("Unique index 'file_id_1' created on secondary collection.")
+        except OperationFailure as e:
+            logger.warning(f"Failed to create unique index on secondary collection 'file_id_1': {e}. "
+                           "This might mean duplicates exist or index already present.")
+        except Exception as e:
+            logger.error(f"Unexpected error creating unique index on secondary collection: {e}")
+
+
+async def remove_duplicate_files():
+    """Removes duplicate files based on 'file_id' from the primary collection."""
+    logger.info("Starting duplicate file cleanup on primary collection...")
+    pipeline = [
+        {"$group": {
+            "_id": "$file_id",
+            "dups": {"$addToSet": "$_id"},
+            "count": {"$sum": 1}
+        }},
+        {"$match": {"count": {"$gt": 1}}}
+    ]
+
+    duplicates = []
+    try:
+        # Use .to_list(length=None) to fetch all results from the async cursor
+        duplicates = await col.aggregate(pipeline).to_list(length=None)
+    except Exception as e:
+        logger.error(f"Error during aggregation to find duplicates: {e}")
+        return
+
+    deleted_count = 0
+    for doc in duplicates:
+        file_id = doc["_id"]
+        # Keep the first occurrence, delete the rest
+        ids_to_delete = doc["dups"][1:]
+        
+        if ids_to_delete:
+            try:
+                result = await col.delete_many({"_id": {"$in": ids_to_delete}})
+                deleted_count += result.deleted_count
+                logger.info(f"Removed {result.deleted_count} duplicates for file_id: {file_id}")
+            except Exception as e:
+                logger.error(f"Error deleting duplicates for file_id {file_id}: {e}")
+    
+    logger.info(f"Finished duplicate file cleanup on primary collection. Total duplicates removed: {deleted_count}")
+
+    if MULTIPLE_DATABASE and sec_col:
+        logger.info("Starting duplicate file cleanup on secondary collection...")
+        duplicates_sec = []
+        try:
+            duplicates_sec = await sec_col.aggregate(pipeline).to_list(length=None)
+        except Exception as e:
+            logger.error(f"Error during aggregation to find duplicates in secondary collection: {e}")
+            return
+
+        deleted_count_sec = 0
+        for doc in duplicates_sec:
+            file_id = doc["_id"]
+            ids_to_delete = doc["dups"][1:]
+            if ids_to_delete:
+                try:
+                    result = await sec_col.delete_many({"_id": {"$in": ids_to_delete}})
+                    deleted_count_sec += result.deleted_count
+                    logger.info(f"Removed {result.deleted_count} duplicates from secondary for file_id: {file_id}")
+                except Exception as e:
+                    logger.error(f"Error deleting duplicates from secondary for file_id {file_id}: {e}")
+        logger.info(f"Finished duplicate file cleanup on secondary collection. Total duplicates removed: {deleted_count_sec}")
+
+
+def clean_file_name(name: str) -> str:
+    """Cleans a file name for better searchability."""
+    # Remove common file extensions, years in parentheses, etc.
+    name = re.sub(r'\.\w+$', '', name) # Remove extension
+    name = re.sub(r'\(\d{4}\)', '', name) # Remove (YYYY)
+    name = re.sub(r'\[.*?\]', '', name) # Remove [text in brackets]
+    name = re.sub(r'\{.*?\}', '', name) # Remove {text in braces}
+    name = re.sub(r'\s+', ' ', name).strip() # Replace multiple spaces with single
+    return name.lower() # Convert to lowercase for consistent search
+
+
+async def save_file(media) -> (bool, str):
+    """Save file in the database. Returns (success, file_id_or_error_message)."""
+    
+    # Ensure media object has file_id attribute
+    if not hasattr(media, 'file_id') or not media.file_id:
+        return False, "Media object has no file_id."
+
+    # Extract Pyrogram's FileId object for detailed info
+    file_id_obj = media.file_id
+    
+    # Get the actual Telegram file_id string
+    file_id = file_id_obj.file_id
+    
+    # Get file_ref bytes and convert to hex string for storage
+    file_ref = file_id_obj.file_ref.hex() if file_id_obj.file_ref else None
+
+    file_name = media.file_name or "Untitled"
+    file_size = media.file_size
+    caption = media.caption.html if media.caption else None
+    
+    # Determine file type
+    file_type = None
+    if media.document:
+        file_type = 'document'
+    elif media.video:
+        file_type = 'video'
+    elif media.photo:
+        file_type = 'photo'
+    elif media.audio:
+        file_type = 'audio'
+    elif media.sticker:
+        file_type = 'sticker'
+    elif media.animation:
+        file_type = 'animation'
+    elif media.voice:
+        file_type = 'voice'
+    elif media.contact:
+        file_type = 'contact'
+    elif media.location:
+        file_type = 'location'
+    elif media.venue:
+        file_type = 'venue'
+    elif media.game:
+        file_type = 'game'
+    elif media.invoice:
+        file_type = 'invoice'
+    elif media.poll:
+        file_type = 'poll'
+    elif media.web_page:
+        file_type = 'web_page'
+    
+    # Clean the file name for better search indexing
+    cleaned_file_name = clean_file_name(file_name)
+
+    file_data = {
+        'file_id': file_id,
+        'file_ref': file_ref, # Store file_ref as hex string
+        'file_name': file_name,
+        'cleaned_file_name': cleaned_file_name, # Store cleaned name for search
+        'file_size': file_size,
+        'caption': caption,
+        'file_type': file_type,
+        'date': media.date # Store the date the message was sent
+    }
+
+    try:
+        # Attempt to insert. DuplicateKeyError will be raised if file_id already exists
+        result = await col.insert_one(file_data)
+        logger.info(f"Successfully saved: {file_name} with MongoDB _id: {result.inserted_id}")
+        return True, str(result.inserted_id) # Return the MongoDB _id
+    except DuplicateKeyError:
+        logger.warning(f"Duplicate file detected (file_id: {file_id}). Not saving.")
+        return False, "Duplicate file."
+    except Exception as e:
+        logger.error(f"Error saving file {file_name}: {e}")
+        return False, str(e)
+
+
+async def get_search_results(query: str, limit: int = 20) -> list:
+    """
+    Searches for files in the database based on the query.
+    Uses text index for efficient searching.
+    """
+    search_query = clean_file_name(query)
+    
+    # Use text search on the 'cleaned_file_name' field
+    # The $text operator requires a text index on the collection
+    filter_criteria = {"$text": {"$search": search_query}}
+
+    files = []
+    # Search in primary collection
+    primary_files = await col.find(filter_criteria).to_list(length=limit)
+    files.extend(primary_files)
+
+    # If MULTIPLE_DATABASE is enabled, search in secondary collection as well
+    if MULTIPLE_DATABASE and sec_col:
+        remaining_limit = limit - len(files)
+        if remaining_limit > 0:
+            secondary_files = await sec_col.find(filter_criteria).to_list(length=remaining_limit)
+            files.extend(secondary_files)
+    
+    # Sort results by relevance if possible (text search provides score)
+    # Or by date, or file_name alphabetically if no score
+    files.sort(key=lambda x: x.get('date', 0), reverse=True) # Sort by date descending
+
+    return files
+
+
+async def get_file_details(file_db_id: str) -> dict:
+    """
+    Fetches a single file's details by its MongoDB _id.
+    """
+    try:
+        obj_id = ObjectId(file_db_id)
+    except Exception:
+        logger.error(f"Invalid ObjectId format: {file_db_id}")
+        return None # Invalid ObjectId format
+
+    file = await col.find_one({'_id': obj_id})
+    if not file and MULTIPLE_DATABASE and sec_col:
+        file = await sec_col.find_one({'_id': obj_id})
+    return file
+
+async def get_bad_files():
+    """
+    Placeholder function for getting bad files.
+    Implement your logic to retrieve blacklisted/bad files here.
+    """
+    logger.info("Retrieving bad files (placeholder function).")
+    # Example: return await col.find({"is_bad": True}).to_list(length=None)
+    return []
+
+
+# Helper functions for file_id encoding/decoding (if still needed for old file_ids)
+# These are typically for Pyrogram's internal file_id handling, not for MongoDB _id
+def encode_file_id(s: bytes) -> str:
+    r = b""
+    n = 0
+    for i in s + bytes([22]) + bytes([4]):
+        if i == 0:
+            n += 1
+        else:
+            if n:
+                r += b"\x00" + bytes([n])
+                n = 0
+            r += bytes([i])
+    return base64.urlsafe_b64encode(r).decode().rstrip("=")
+    
+def unpack_new_file_id(new_file_id):
+    """Return file_id object from new_file_id string."""
+    # This function is for decoding Pyrogram's new file_id format
+    # It's not directly used for MongoDB _id lookups, but kept for completeness
+    decoded = FileId.decode(new_file_id)
+    # Example of how you might re-encode it if needed, but usually you'd just use decoded.file_id
+    # and decoded.file_ref directly.
+    file_id = encode_file_id(
+        pack(
+            "<iiqq",
+            int(decoded.file_type),
+            decoded.dc_id,
+            decoded.media_id,
+            decoded.access_hash
         )
-
-
-@Client.on_message(filters.command("stats") & filters.private & filters.user(ADMINS))
-async def show_stats(client: Client, message: Message):
-    users = await db.total_users_count()
-    chats = await db.total_chat_count()
-    total_files = await col.estimated_document_count() + (await sec_col.estimated_document_count() if MULTIPLE_DATABASE else 0)
-    await message.reply_text(
-        script.STATUS_TXT.format(users, chats, total_files)
     )
-
-@Client.on_message(filters.command("broadcast") & filters.private & filters.user(ADMINS))
-async def broadcast_message(client: Client, message: Message):
-    if not message.reply_to_message:
-        return await message.reply_text("Reply to a message to broadcast.")
-    
-    users = await db.get_all_users()
-    b_count = 0
-    e_count = 0
-    m = await message.reply_text("Starting broadcast...")
-    for user in users:
-        try:
-            await message.reply_to_message.copy(user["id"])
-            b_count += 1
-            await asyncio.sleep(0.5) # Small delay to prevent flood waits
-        except FloodWait as e:
-            await asyncio.sleep(e.value + 1) # Wait a bit longer than requested
-            await message.reply_to_message.copy(user["id"])
-            b_count += 1
-        except Exception as e:
-            logger.error(f"Error broadcasting to {user['id']}: {e}")
-            e_count += 1
-    await m.edit_text(f"Broadcast complete.\nSuccessful: {b_count}\nFailed: {e_count}")
-
-@Client.on_message(filters.command("batch") & filters.private & filters.user(ADMINS))
-async def batch_start(client: Client, message: Message):
-    if not message.reply_to_message:
-        return await message.reply_text("Reply to the last message of a channel/group batch to save.")
-    
-    if not message.reply_to_message.forward_from_chat or not message.reply_to_message.forward_from_chat.id in CHANNELS:
-        return await message.reply_text("This message is not from an authorized channel.")
-    
-    first_id = message.reply_to_message.forward_from_message_id
-    last_id = message.reply_to_message.id
-    
-    m = await message.reply_text("Starting batch save...")
-    
-    total_saved = 0
-    for i in range(first_id, last_id + 1):
-        try:
-            msg = await client.get_messages(message.reply_to_message.forward_from_chat.id, i)
-            if msg.media:
-                success, _ = await save_file(msg)
-                if success:
-                    total_saved += 1
-        except Exception as e:
-            logger.error(f"Error saving message {i} in batch: {e}")
-            continue
-    
-    await m.edit_text(f"Batch save complete. Saved {total_saved} files.")
-
-# Handler for incoming media messages (documents, videos, photos)
-@Client.on_message(filters.private & filters.media & filters.user(ADMINS))
-async def media_handler(client: Client, message: Message):
-    if not message.media:
-        return # Not a media message
-
-    # Check if the message is forwarded from an authorized channel
-    if message.forward_from_chat and message.forward_from_chat.id in CHANNELS:
-        m = await message.reply_text("Saving file to database...")
-        success, file_id = await save_file(message)
-        if success:
-            await m.edit_text(f"File saved successfully! File ID: `{file_id}`")
-        else:
-            await m.edit_text("Failed to save file or file already exists.")
-    else:
-        await message.reply_text("This media is not from an authorized channel. Only media forwarded from authorized channels can be saved.")
-
-
-@Client.on_message(filters.text & filters.private & filters.incoming)
-async def auto_filter(client: Client, message: Message):
-    if re.findall(r"((^|\s)/batchfile)", message.text):
-        return
-    
-    # Check force subscribe
-    if FORCE_SUB_MODE:
-        try:
-            user_status = await client.get_chat_member(AUTH_CHANNEL, message.from_user.id)
-            if user_status.status in [ChatMemberStatus.BANNED, ChatMemberStatus.LEFT]:
-                raise UserNotParticipant
-        except UserNotParticipant:
-            btn = [[InlineKeyboardButton(text="😇 Join Updates Channel 😇", url=f"https://t.me/{AUTH_CHANNEL}")]]
-            if SUPPORT_CHAT:
-                btn.append([InlineKeyboardButton(text="⭕ Support Group ⭕", url=f"https://t.me/{SUPPORT_CHAT}")])
-            return await message.reply_text(
-                text=script.JOIN_GROUP_ALERT.format(message.from_user.first_name),
-                reply_markup=InlineKeyboardMarkup(btn),
-                disable_web_page_preview=True
-            )
-        except (PeerIdInvalid, ChannelInvalid) as e:
-            logger.error(f"Force subscribe channel invalid: {e}")
-            # Continue without force sub if channel is invalid
-        except Exception as e:
-            logger.error(f"Error checking force subscribe: {e}")
-            # Continue without force sub if other error
-
-    # Flood control for searching
-    user_id = message.from_user.id
-    current_time = time.time()
-    if user_id in FLOOD_CAPS:
-        last_search_time = FLOOD_CAPS[user_id]
-        if current_time - last_search_time < 2: # 2-second cooldown
-            return # Ignore rapid searches
-    FLOOD_CAPS[user_id] = current_time
-
-    query = message.text.strip()
-    if not query:
-        return
-
-    results = await get_search_results(query)
-
-    if not results:
-        if SPELL_CHECK_REPLY:
-            return await message.reply_text(script.NO_RESULT_TXT.format(query))
-        return
-
-    keyboards = []
-    if BUTTON_MODE:
-        buttons_per_row = MAX_BTN if MAX_BTN > 0 else 5
-        buttons = []
-        for file_details in results:
-            # Use file_details['_id'] which is the unique MongoDB ObjectId
-            title = file_details.get("file_name", "Untitled File") # Fallback if file_name is missing
-            file_db_id = str(file_details["_id"]) # Convert ObjectId to string for callback_data
-            buttons.append(InlineKeyboardButton(title, callback_data=f"files#{file_db_id}"))
-            if len(buttons) == buttons_per_row:
-                keyboards.append(buttons)
-                buttons = []
-        if buttons: # Add any remaining buttons
-            keyboards.append(buttons)
-    else:
-        # If not button mode, we will send individual messages or a formatted list
-        pass
-
-    if BUTTON_MODE and keyboards:
-        if PM_SEARCH_MODE == "TEXT":
-            # Send results as a list of buttons in a single message
-            await message.reply_text(
-                "I found some results. Choose from below:",
-                reply_markup=InlineKeyboardMarkup(keyboards),
-                disable_web_page_preview=True
-            )
-        else: # Default to sending as a list in Markdown
-            search_results_text = "Here are some results:\n\n"
-            for idx, file_details in enumerate(results):
-                search_results_text += f"{idx + 1}. **{file_details.get('file_name', 'Untitled File')}**\n"
-            search_results_text += "\nChoose a button below to get the file."
-            await message.reply_text(
-                search_results_text,
-                reply_markup=InlineKeyboardMarkup(keyboards),
-                disable_web_page_preview=True
-            )
-    else: # If not button mode, send files directly or list them
-        for file_details in results:
-            file_db_id = str(file_details["_id"])
-            try:
-                # Provide a button to get the file if not sending directly
-                caption = await get_cap(file_details) # Use get_cap to format caption
-                await message.reply_text(
-                    caption,
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Get File", callback_data=f"getfile#{file_db_id}")]])
-                )
-                await asyncio.sleep(1) # Delay to prevent flood
-            except Exception as e:
-                logger.error(f"Error sending search result for {file_details.get('file_name', 'Unknown')}: {e}")
-                continue
-
-
-@Client.on_callback_query(filters.regex("^files#|^getfile#"))
-async def send_file_from_button(client: Client, callback_query: CallbackQuery):
-    query_data = callback_query.data.split("#")
-    action = query_data[0]
-    file_db_id = query_data[1] # This is the MongoDB _id as a string
-
-    file_details = await get_file_details(file_db_id) # Fetch by MongoDB _id
-    if not file_details:
-        return await callback_query.answer("File not found in database!", show_alert=True)
-    
-    # Extract original file_id (Telegram's file_id) and file_ref if available
-    telegram_file_id = file_details.get('file_id')
-    telegram_file_ref = file_details.get('file_ref') # This is crucial for send_cached_media
-    file_type = file_details.get('file_type') # e.g., 'document', 'video', 'photo'
-
-    if not telegram_file_id:
-        return await callback_query.answer("Telegram file ID not found for this entry!", show_alert=True)
-
-    try:
-        caption = await get_cap(file_details) # Generate caption using utils.get_cap
-
-        # Use send_cached_media for sending files by file_id and file_ref
-        if file_type == 'document':
-            await client.send_document(
-                chat_id=callback_query.message.chat.id,
-                document=telegram_file_id,
-                file_ref=bytes.fromhex(telegram_file_ref) if telegram_file_ref else None,
-                caption=caption,
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Close", callback_data="close_msg")]])
-            )
-        elif file_type == 'video':
-            await client.send_video(
-                chat_id=callback_query.message.chat.id,
-                video=telegram_file_id,
-                file_ref=bytes.fromhex(telegram_file_ref) if telegram_file_ref else None,
-                caption=caption,
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Close", callback_data="close_msg")]])
-            )
-        elif file_type == 'photo':
-            await client.send_photo(
-                chat_id=callback_query.message.chat.id,
-                photo=telegram_file_id,
-                file_ref=bytes.fromhex(telegram_file_ref) if telegram_file_ref else None,
-                caption=caption,
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Close", callback_data="close_msg")]])
-            )
-        else:
-            # Fallback for unknown types or if file_type is not stored
-            await client.send_cached_media(
-                chat_id=callback_query.message.chat.id,
-                file_id=telegram_file_id,
-                file_ref=bytes.fromhex(telegram_file_ref) if telegram_file_ref else None,
-                caption=caption,
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Close", callback_data="close_msg")]])
-            )
-
-        await callback_query.answer("File sent successfully!")
-    except FloodWait as e:
-        await callback_query.answer(f"Too many requests, please try again after {e.value} seconds.", show_alert=True)
-        await asyncio.sleep(e.value + 1)
-    except Exception as e:
-        logger.error(f"Error sending file from callback: {e}")
-        await callback_query.answer("Failed to send file. An error occurred.", show_alert=True)
-
-@Client.on_callback_query(filters.regex("^settings"))
-async def settings_callback(client: Client, query: CallbackQuery):
-    # This is a placeholder. You'll need to implement your settings logic here.
-    # For example, fetch user/chat settings from DB and display options.
-    await query.answer("Settings menu will be implemented here!", show_alert=True)
-    # Example:
-    # user_settings = await db.get_user_settings(query.from_user.id)
-    # await query.message.edit_text("Your settings:", reply_markup=InlineKeyboardMarkup(...))
-
-@Client.on_callback_query(filters.regex("^admin_panel"))
-async def admin_panel_callback(client: Client, query: CallbackQuery):
-    if query.from_user.id not in ADMINS:
-        return await query.answer("You are not authorized to access this panel.", show_alert=True)
-    await query.answer("Admin panel will be implemented here!", show_alert=True)
-    # Example:
-    # await query.message.edit_text("Admin options:", reply_markup=InlineKeyboardMarkup(...))
-
-@Client.on_callback_query(filters.regex("^close_msg"))
-async def close_message_callback(client: Client, query: CallbackQuery):
-    try:
-        await query.message.delete()
-    except Exception as e:
-        logger.error(f"Error deleting message: {e}")
-    await query.answer("Message closed.")
+    return file_id
 
