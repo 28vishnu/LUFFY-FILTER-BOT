@@ -17,8 +17,8 @@ BOT_TOKEN = environ.get('BOT_TOKEN', "") # Reverted to empty string. This MUST b
 
 
 # This Pictures Is For Start Message Picture, You Can Add Multiple By Giving One Space Between Each.
-# Using a default working Telegraph image. Replace with your own direct Telegraph image URL(s) or Telegram File ID(s).
-PICS = (environ.get('PICS', 'https://graph.org/file/ce1723991756e48c35aa1.jpg')).split() 
+# Using the provided Telegram File ID for the welcome image.
+PICS = (environ.get('PICS', 'AgACAgUAAxkBAAICuGht-6GMOH1PNyf31mjemh8PCzcYAALPxDEbEDJwV5LouvHkzjTeAAgBAAMCAAN4AAceBA')).split()
 
 
 # Admins & Users
