@@ -273,6 +273,8 @@ PUBLIC_FILE_STORE = bool(environ.get('PUBLIC_FILE_STORE', True)) # Added PUBLIC_
 
 # Support Chat
 SUPPORT_CHAT = environ.get('SUPPORT_CHAT', 'luffydev2k') # Added SUPPORT_CHAT
+# If SUPPORT_CHAT_ID is a numerical ID for a support group/channel, define it here:
+# SUPPORT_CHAT_ID = int(environ.get('SUPPORT_CHAT_ID', 'YOUR_SUPPORT_CHAT_ID_HERE')) # Example: -1001234567890
 
 # Owner Link
 OWNER_LNK = environ.get('OWNER_LNK', 'https://t.me/luffydev2k') # Added OWNER_LNK
@@ -290,7 +292,7 @@ VERIFY = bool(environ.get('VERIFY', False)) # Added VERIFY
 NO_RESULTS_MSG = bool(environ.get('NO_RESULTS_MSG', True)) # Added NO_RESULTS_MSG
 
 # Start Command Reactions
-REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🏆", "😎", "🏆", "�", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
+REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🏆", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
 
 # Use Caption Filter
 USE_CAPTION_FILTER = bool(environ.get('USE_CAPTION_FILTER', True)) # Added USE_CAPTION_FILTER
@@ -299,10 +301,20 @@ USE_CAPTION_FILTER = bool(environ.get('USE_CAPTION_FILTER', True)) # Added USE_C
 MSG_ALRT = environ.get('MSG_ALRT', "This is an alert message.") # Added MSG_ALRT
 
 # Languages (Added this line)
-LANGUAGES = [] # Added LANGUAGES
+LANGUAGES = ["english", "hindi", "tamil", "telugu", "malayalam", "kannada", "urdu", "gujarati", "bangla"] # Added LANGUAGES with example values
 
 # Years (Added this line)
-YEARS = [] # Added YEARS
+YEARS = ["2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015"] # Added YEARS with example values
+
+# Qualities (Added this line)
+QUALITIES = ["480p", "720p", "1080p", "2160p", "4k"] # Added QUALITIES with example values
+
+# Episodes (Added this line)
+EPISODES = ["e01", "e02", "e03", "e04", "e05", "e06", "e07", "e08", "e09", "e10"] # Added EPISODES with example values
+
+# Seasons (Added this line)
+SEASONS = ["s01", "s02", "s03", "s04", "s05", "s06", "s07", "s08", "s09", "s10", "season 1", "season 2", "season 3", "season 4", "season 5", "season 6", "season 7", "season 8", "season 9", "season 10"] # Added SEASONS with example values
+
 
 if MULTIPLE_DATABASE == False:
     USER_DB_URI = DATABASE_URI
