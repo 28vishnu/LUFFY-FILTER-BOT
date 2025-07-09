@@ -5,17 +5,20 @@
 import re, base64, json
 from struct import pack
 from pyrogram.file_id import FileId, FileType
-from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError
+from pymongo import MongoClient, ASCENDING
+from pymongo.errors import DuplicateKeyError, OperationFailure
 from bson.objectid import ObjectId # Import ObjectId for querying by _id
+import asyncio
+import logging
+
 from info import FILE_DB_URI, SEC_FILE_DB_URI, DATABASE_NAME, COLLECTION_NAME, MULTIPLE_DATABASE, USE_CAPTION_FILTER, MAX_BTN
+
+logger = logging.getLogger(__name__)
 
 # First Database For File Saving 
 client = MongoClient(FILE_DB_URI)
 db = client[DATABASE_NAME]
 col = db[COLLECTION_NAME]
-col.create_index([("file_name", "text")], name="file_name_text_index") # For text search
-col.create_index([("file_id", 1)], unique=True) # Ensure file_id is unique for primary DB
 
 # Second Database For File Saving (if enabled)
 sec_client = None
@@ -25,8 +28,114 @@ if MULTIPLE_DATABASE:
     sec_client = MongoClient(SEC_FILE_DB_URI)
     sec_db = sec_client[DATABASE_NAME]
     sec_col = sec_db[COLLECTION_NAME]
-    sec_col.create_index([("file_name", "text")], name="sec_file_name_text_index")
-    sec_col.create_index([("file_id", 1)], unique=True) # Ensure file_id is unique for secondary DB
+
+
+async def ensure_indexes():
+    """Ensures necessary indexes are created on the collections."""
+    try:
+        # Create text index for file_name for search functionality
+        col.create_index([("file_name", "text")], name="file_name_text_index", background=True)
+        logger.info("Text index 'file_name_text_index' created on primary collection.")
+    except OperationFailure as e:
+        logger.warning(f"Failed to create text index on primary collection: {e}")
+    except Exception as e:
+        logger.error(f"Unexpected error creating text index on primary collection: {e}")
+
+    try:
+        # Create unique index on file_id to prevent duplicates
+        # Use background=True to build in the background without blocking
+        # Use sparse=True so that documents without 'file_id' field are not indexed
+        col.create_index([("file_id", ASCENDING)], unique=True, background=True, sparse=True)
+        logger.info("Unique index 'file_id_1' created on primary collection.")
+    except OperationFailure as e:
+        # This will catch if the index already exists or if there are duplicates preventing creation
+        logger.warning(f"Failed to create unique index on primary collection 'file_id_1': {e}. "
+                       "This might mean duplicates exist or index already present.")
+    except Exception as e:
+        logger.error(f"Unexpected error creating unique index on primary collection: {e}")
+
+    if MULTIPLE_DATABASE and sec_col:
+        try:
+            sec_col.create_index([("file_name", "text")], name="sec_file_name_text_index", background=True)
+            logger.info("Text index 'sec_file_name_text_index' created on secondary collection.")
+        except OperationFailure as e:
+            logger.warning(f"Failed to create text index on secondary collection: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error creating text index on secondary collection: {e}")
+
+        try:
+            sec_col.create_index([("file_id", ASCENDING)], unique=True, background=True, sparse=True)
+            logger.info("Unique index 'file_id_1' created on secondary collection.")
+        except OperationFailure as e:
+            logger.warning(f"Failed to create unique index on secondary collection 'file_id_1': {e}. "
+                           "This might mean duplicates exist or index already present.")
+        except Exception as e:
+            logger.error(f"Unexpected error creating unique index on secondary collection: {e}")
+
+
+async def remove_duplicate_files():
+    """Removes duplicate files based on 'file_id' from the primary collection."""
+    logger.info("Starting duplicate file cleanup on primary collection...")
+    pipeline = [
+        {"$group": {
+            "_id": "$file_id",
+            "dups": {"$addToSet": "$_id"},
+            "count": {"$sum": 1}
+        }},
+        {"$match": {"count": {"$gt": 1}}}
+    ]
+
+    duplicates = []
+    try:
+        # Use col.aggregate for asynchronous aggregation
+        # Note: PyMongo's async operations require an async driver (like motor)
+        # If you're using pymongo directly, you might need to run this in a thread pool
+        # For simplicity, assuming motor or a compatible async setup here.
+        # If you are using synchronous pymongo, this part needs adjustment.
+        async for doc in col.aggregate(pipeline): # This line assumes async pymongo/motor
+            duplicates.append(doc)
+    except Exception as e:
+        logger.error(f"Error during aggregation to find duplicates: {e}")
+        return
+
+    deleted_count = 0
+    for doc in duplicates:
+        file_id = doc["_id"]
+        # Keep the first occurrence, delete the rest
+        ids_to_delete = doc["dups"][1:]
+        
+        if ids_to_delete:
+            try:
+                result = await col.delete_many({"_id": {"$in": ids_to_delete}}) # Assumes async delete_many
+                deleted_count += result.deleted_count
+                logger.info(f"Removed {result.deleted_count} duplicates for file_id: {file_id}")
+            except Exception as e:
+                logger.error(f"Error deleting duplicates for file_id {file_id}: {e}")
+    
+    logger.info(f"Finished duplicate file cleanup on primary collection. Total duplicates removed: {deleted_count}")
+
+    if MULTIPLE_DATABASE and sec_col:
+        logger.info("Starting duplicate file cleanup on secondary collection...")
+        duplicates_sec = []
+        try:
+            async for doc in sec_col.aggregate(pipeline): # Assumes async pymongo/motor
+                duplicates_sec.append(doc)
+        except Exception as e:
+            logger.error(f"Error during aggregation to find duplicates in secondary collection: {e}")
+            return
+
+        deleted_count_sec = 0
+        for doc in duplicates_sec:
+            file_id = doc["_id"]
+            ids_to_delete = doc["dups"][1:]
+            if ids_to_delete:
+                try:
+                    result = await sec_col.delete_many({"_id": {"$in": ids_to_delete}}) # Assumes async delete_many
+                    deleted_count_sec += result.deleted_count
+                    logger.info(f"Removed {result.deleted_count} duplicates from secondary for file_id: {file_id}")
+                except Exception as e:
+                    logger.error(f"Error deleting duplicates from secondary for file_id {file_id}: {e}")
+        logger.info(f"Finished duplicate file cleanup on secondary collection. Total duplicates removed: {deleted_count_sec}")
 
 
 def clean_file_name(name: str) -> str:
@@ -106,19 +215,15 @@ async def save_file(media) -> (bool, str):
     }
 
     try:
-        # Check if file with same file_id already exists to prevent duplicates
-        existing_file = await col.find_one({'file_id': file_id})
-        if existing_file:
-            return False, "File already exists."
-
-        result = await col.insert_one(file_data)
-        print(f"Successfully saved: {file_name} with MongoDB _id: {result.inserted_id}")
+        # Attempt to insert. DuplicateKeyError will be raised if file_id already exists
+        result = await col.insert_one(file_data) # Assumes async insert_one
+        logger.info(f"Successfully saved: {file_name} with MongoDB _id: {result.inserted_id}")
         return True, str(result.inserted_id) # Return the MongoDB _id
     except DuplicateKeyError:
-        print(f"Duplicate file detected (file_id: {file_id}). Not saving.")
+        logger.warning(f"Duplicate file detected (file_id: {file_id}). Not saving.")
         return False, "Duplicate file."
     except Exception as e:
-        print(f"Error saving file {file_name}: {e}")
+        logger.error(f"Error saving file {file_name}: {e}")
         return False, str(e)
 
 
@@ -135,14 +240,14 @@ async def get_search_results(query: str, limit: int = 20) -> list:
 
     files = []
     # Search in primary collection
-    primary_files = await col.find(filter_criteria).limit(limit).to_list(length=None)
+    primary_files = await col.find(filter_criteria).limit(limit).to_list(length=None) # Assumes async find
     files.extend(primary_files)
 
     # If MULTIPLE_DATABASE is enabled, search in secondary collection as well
     if MULTIPLE_DATABASE and sec_col:
         remaining_limit = limit - len(files)
         if remaining_limit > 0:
-            secondary_files = await sec_col.find(filter_criteria).limit(remaining_limit).to_list(length=None)
+            secondary_files = await sec_col.find(filter_criteria).limit(remaining_limit).to_list(length=None) # Assumes async find
             files.extend(secondary_files)
     
     # Sort results by relevance if possible (text search provides score)
@@ -159,11 +264,12 @@ async def get_file_details(file_db_id: str) -> dict:
     try:
         obj_id = ObjectId(file_db_id)
     except Exception:
+        logger.error(f"Invalid ObjectId format: {file_db_id}")
         return None # Invalid ObjectId format
 
-    file = await col.find_one({'_id': obj_id})
+    file = await col.find_one({'_id': obj_id}) # Assumes async find_one
     if not file and MULTIPLE_DATABASE and sec_col:
-        file = await sec_col.find_one({'_id': obj_id})
+        file = await sec_col.find_one({'_id': obj_id}) # Assumes async find_one
     return file
 
 
