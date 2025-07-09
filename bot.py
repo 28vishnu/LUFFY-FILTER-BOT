@@ -53,17 +53,10 @@ from plugins.clone import restart_bots
 # Assuming TechVJ is a package/directory at the same level as bot.py and plugins
 # If TechVJ.bot or TechVJ.util.keepalive do not exist, these imports will fail.
 # Based on the user's traceback, it seems TechVJ is a valid path.
-from TechVJ.bot import TechVJBot # This imports the TechVJBot client instance
+# CRITICAL: This import assumes TechVJ/bot.py defines and exports 'TechVJBot'
+from TechVJ.bot import TechVJBot 
 from TechVJ.util.keepalive import ping_server
-from TechVJ.bot.clients import initialize_clients
-
-# --- CRITICAL IMPORTANT REMINDER ---
-# The `sleep_threshold` parameter for the Pyrogram Client MUST be set
-# where `TechVJBot` is actually initialized (likely in TechVJ/bot.py).
-# This is the primary way to handle FloodWait errors effectively.
-#
-# Refer to the "CRITICAL: Update for TechVJ/bot.py" immersive artifact above for details.
-# --- END CRITICAL IMPORTANT REMINDER ---
+from TechVJ.bot.clients import initialize_clients # Assuming this function exists
 
 ppath = "plugins/*.py"
 files = glob.glob(ppath)
@@ -81,21 +74,25 @@ async def start():
     except FloodWait as e:
         logger.warning(f"FloodWait during bot startup: Telegram says to wait for {e.value} seconds. Retrying after delay.")
         await asyncio.sleep(e.value + 5) # Add a small buffer to the wait time
-        # This will cause the entire `start()` function to be re-run by `loop.run_until_complete(start())`
-        # if this is the initial call. If it's a retry, it will just continue.
-        # However, the most robust solution is setting sleep_threshold in the Client init itself.
-        return # Exit this attempt and let the outer loop handle retry if needed
+        # The most robust solution is setting sleep_threshold in the Client init itself (in TechVJ/bot.py).
+        # This specific handler is for initial startup issues.
+        return # Exit this attempt and let the outer loop handle retry if needed, or main block will catch.
     except Exception as e:
         logger.exception(f"An error occurred during bot startup: {e}")
-        raise # Re-raise to propagate the error if it's not a FloodWait
+        # If the bot fails to start, it's better to log and exit or retry based on deployment strategy.
+        sys.exit(1) # Exit the application if critical startup fails
 
     # Initialize other clients (if any, from TechVJ.bot.clients)
-    await initialize_clients()
+    # Ensure initialize_clients is an async function and handles its own errors
+    try:
+        await initialize_clients()
+    except Exception as e:
+        logger.error(f"Error initializing other clients: {e}")
 
     # Load plugins dynamically
     for name in files:
-        with open(name) as a:
-            patt = Path(a.name)
+        try:
+            patt = Path(name)
             plugin_name = patt.stem.replace(".py", "")
             plugins_dir = Path(f"plugins/{plugin_name}.py")
             import_path = "plugins.{}".format(plugin_name)
@@ -104,35 +101,48 @@ async def start():
             spec.loader.exec_module(load)
             sys.modules["plugins." + plugin_name] = load
             print("Tech VJ Imported => " + plugin_name)
+        except Exception as e:
+            logger.error(f"Error importing plugin {name}: {e}")
 
     # Start ping server if on Heroku
     if ON_HEROKU:
         asyncio.create_task(ping_server())
 
     # Load banned users and chats
-    b_users, b_chats = await db.get_banned()
-    temp.BANNED_USERS = b_users
-    temp.BANNED_CHATS = b_chats
+    try:
+        b_users, b_chats = await db.get_banned()
+        temp.BANNED_USERS = b_users
+        temp.BANNED_CHATS = b_chats
+    except Exception as e:
+        logger.error(f"Error loading banned users/chats: {e}")
+        temp.BANNED_USERS = []
+        temp.BANNED_CHATS = []
 
     # Fetch bot's info and store in temp
-    me = await TechVJBot.get_me()
-    temp.BOT = TechVJBot
-    temp.ME = me.id
-    temp.U_NAME = me.username
-    temp.B_NAME = me.first_name
-    logging.info(script.LOGO)
+    try:
+        me = await TechVJBot.get_me()
+        temp.BOT = TechVJBot
+        temp.ME = me.id
+        temp.U_NAME = me.username
+        temp.B_NAME = me.first_name
+        logging.info(script.LOGO)
+    except Exception as e:
+        logger.error(f"Error fetching bot info: {e}")
 
     # Send restart messages
     tz = pytz.timezone('Asia/Kolkata')
     today = date.today()
     now = datetime.now(tz)
-    time = now.strftime("%H:%M:%S %p")
+    time_str = now.strftime("%H:%M:%S %p")
+    
+    # Send to LOG_CHANNEL
     try:
-        await TechVJBot.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_TXT.format(today, time))
+        await TechVJBot.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_TXT.format(today, time_str))
     except Exception as e:
         print(f"Error sending restart message to LOG_CHANNEL: {e}")
         print("Make Your Bot Admin In Log Channel With Full Rights")
 
+    # Send to CHANNELS
     for ch in CHANNELS:
         try:
             k = await TechVJBot.send_message(chat_id=ch, text="**Bot Restarted**")
@@ -141,6 +151,7 @@ async def start():
             print(f"Error sending restart message to CHANNELS: {e}")
             print("Make Your Bot Admin In File Channels With Full Rights")
 
+    # Send to AUTH_CHANNEL
     try:
         k = await TechVJBot.send_message(chat_id=AUTH_CHANNEL, text="**Bot Restarted**")
         await k.delete()
@@ -151,15 +162,24 @@ async def start():
     # Restart clone bots if enabled
     if CLONE_MODE == True:
         print("Restarting All Clone Bots.......\n")
-        await restart_bots()
-        print("Restarted All Clone Bots.\n")
+        try:
+            await restart_bots()
+            print("Restarted All Clone Bots.\n")
+        except Exception as e:
+            logger.error(f"Error restarting clone bots: {e}")
 
     # Start web server
-    app = web.AppRunner(await web_server())
-    await app.setup()
-    bind_address = "0.0.0.0"
-    # Use the PORT environment variable provided by Render
-    await web.TCPSite(app, bind_address, PORT).start() # <--- IMPORTANT: Ensure PORT is used here
+    try:
+        app = web.AppRunner(await web_server())
+        await app.setup()
+        bind_address = "0.0.0.0"
+        # Use the PORT environment variable provided by Render
+        site = web.TCPSite(app, bind_address, PORT) # Assign to a variable
+        await site.start()
+        logger.info(f"Web server started on {bind_address}:{PORT}")
+    except Exception as e:
+        logger.error(f"Error starting web server: {e}")
+        # This is a critical component for some bots, might want to exit or log prominently.
 
     # Keep the bot running indefinitely
     await idle()
@@ -167,9 +187,11 @@ async def start():
 
 if __name__ == '__main__':
     try:
-        loop.run_until_complete(start())
+        # Use asyncio.run() for proper event loop management
+        asyncio.run(start())
     except KeyboardInterrupt:
         logging.info('Service Stopped Bye 👋')
     except Exception as e:
         # Log the unhandled exception before exiting
         logger.exception(f"An unhandled error occurred in main execution: {e}")
+
