@@ -424,3 +424,73 @@ async def broadcast_messages_group(client, message, chats):
             failed_count += 1
     logger.info(f"Broadcast to groups completed. Success: {success_count}, Failed: {failed_count}")
     return success_count, failed_count
+
+def get_file_id(msg: Message):
+    """
+    Extracts the file_id from a Pyrogram Message object.
+    This is a placeholder; you might need to adjust based on your exact needs.
+    """
+    if msg.document:
+        return msg.document.file_id
+    elif msg.video:
+        return msg.video.file_id
+    elif msg.audio:
+        return msg.audio.file_id
+    elif msg.photo:
+        return msg.photo.file_id
+    elif msg.animation:
+        return msg.animation.file_id
+    elif msg.sticker:
+        return msg.sticker.file_id
+    elif msg.voice:
+        return msg.voice.file_id
+    elif msg.video_note:
+        return msg.video_note.file_id
+    elif msg.new_chat_photo:
+        return msg.new_chat_photo[0].file_id # New chat photo is a list of photos
+    return None
+
+def parser(text):
+    """
+    Parses text to extract commands or specific patterns.
+    This is a generic placeholder; implement your specific parsing logic.
+    """
+    # Example: a very simple parser that returns the text itself
+    return text.strip()
+
+def split_quotes(text: str):
+    """
+    Splits a string by quotes, handling escaped quotes.
+    This is a common utility for parsing commands with arguments.
+    """
+    if not text:
+        return []
+    
+    parts = []
+    current_part = []
+    in_quote = False
+    escape_next = False
+    
+    for char in text:
+        if escape_next:
+            current_part.append(char)
+            escape_next = False
+        elif char == '\\':
+            escape_next = True
+        elif char == '"':
+            in_quote = not in_quote
+            if not in_quote and current_part: # End of quote, add part
+                parts.append("".join(current_part))
+                current_part = []
+        elif char.isspace() and not in_quote:
+            if current_part:
+                parts.append("".join(current_part))
+                current_part = []
+        else:
+            current_part.append(char)
+            
+    if current_part:
+        parts.append("".join(current_part))
+        
+    return parts
+
