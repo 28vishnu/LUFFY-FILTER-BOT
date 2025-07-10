@@ -2,20 +2,20 @@
 # Subscribe YouTube Channel For Amazing Bot @Tech_VJ
 # Ask Doubt on telegram @KingVJ01
 
-import motor.motor_asyncio
-import info # Import the whole info module
+import pymongo
+
+from info import OTHER_DB_URI, DATABASE_NAME
 
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-# Access OTHER_DB_URI from the info module
-myclient = motor.motor_asyncio.AsyncIOMotorClient(info.OTHER_DB_URI)
-mydb = myclient[info.DATABASE_NAME] # Access DATABASE_NAME from info
+myclient = pymongo.MongoClient(OTHER_DB_URI)
+mydb = myclient[DATABASE_NAME]
 mycol = mydb['CONNECTION'] 
 
 async def add_connection(group_id, user_id):
-    query = await mycol.find_one(
+    query = mycol.find_one(
         { "_id": user_id },
         { "_id": 0, "active_group": 0 }
     )
@@ -34,17 +34,16 @@ async def add_connection(group_id, user_id):
         'active_group' : group_id,
     }
 
-    if await mycol.count_documents( {"_id": user_id} ) == 0:
+    if mycol.count_documents( {"_id": user_id} ) == 0:
         try:
-            await mycol.insert_one(data)
+            mycol.insert_one(data)
             return True
-        except Exception as e:
-            logger.exception(f'Some error occurred! {e}', exc_info=True)
-            return False
+        except:
+            logger.exception('Some error occurred!', exc_info=True)
 
     else:
         try:
-            await mycol.update_one(
+            mycol.update_one(
                 {'_id': user_id},
                 {
                     "$push": {"group_details": group_details},
@@ -52,14 +51,13 @@ async def add_connection(group_id, user_id):
                 }
             )
             return True
-        except Exception as e:
-            logger.exception(f'Some error occurred! {e}', exc_info=True)
-            return False
+        except:
+            logger.exception('Some error occurred!', exc_info=True)
 
         
 async def active_connection(user_id):
 
-    query = await mycol.find_one(
+    query = mycol.find_one(
         { "_id": user_id },
         { "_id": 0, "group_details": 0 }
     )
@@ -71,7 +69,7 @@ async def active_connection(user_id):
 
 
 async def all_connections(user_id):
-    query = await mycol.find_one(
+    query = mycol.find_one(
         { "_id": user_id },
         { "_id": 0, "active_group": 0 }
     )
@@ -82,7 +80,7 @@ async def all_connections(user_id):
 
 
 async def if_active(user_id, group_id):
-    query = await mycol.find_one(
+    query = mycol.find_one(
         { "_id": user_id },
         { "_id": 0, "group_details": 0 }
     )
@@ -90,7 +88,7 @@ async def if_active(user_id, group_id):
 
 
 async def make_active(user_id, group_id):
-    update = await mycol.update_one(
+    update = mycol.update_one(
         {'_id': user_id},
         {"$set": {"active_group" : group_id}}
     )
@@ -98,7 +96,7 @@ async def make_active(user_id, group_id):
 
 
 async def make_inactive(user_id):
-    update = await mycol.update_one(
+    update = mycol.update_one(
         {'_id': user_id},
         {"$set": {"active_group" : None}}
     )
@@ -108,26 +106,26 @@ async def make_inactive(user_id):
 async def delete_connection(user_id, group_id):
 
     try:
-        update = await mycol.update_one(
+        update = mycol.update_one(
             {"_id": user_id},
             {"$pull" : { "group_details" : {"group_id":group_id} } }
         )
         if update.modified_count == 0:
             return False
-        query = await mycol.find_one(
+        query = mycol.find_one(
             { "_id": user_id },
             { "_id": 0 }
         )
-        if query and len(query["group_details"]) >= 1:
+        if len(query["group_details"]) >= 1:
             if query['active_group'] == group_id:
                 prvs_group_id = query["group_details"][len(query["group_details"]) - 1]["group_id"]
 
-                await mycol.update_one(
+                mycol.update_one(
                     {'_id': user_id},
                     {"$set": {"active_group" : prvs_group_id}}
                 )
         else:
-            await mycol.update_one(
+            mycol.update_one(
                 {'_id': user_id},
                 {"$set": {"active_group" : None}}
             )
