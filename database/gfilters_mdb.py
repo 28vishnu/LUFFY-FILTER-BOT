@@ -3,21 +3,21 @@
 # Ask Doubt on telegram @KingVJ01
 
 
-import motor.motor_asyncio
-import info # Import the whole info module
+import pymongo
+from info import OTHER_DB_URI, DATABASE_NAME
 from pyrogram import enums
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-# Access OTHER_DB_URI from the info module
-myclient = motor.motor_asyncio.AsyncIOMotorClient(info.OTHER_DB_URI)
-mydb = myclient[info.DATABASE_NAME] # Access DATABASE_NAME from info
+myclient = pymongo.MongoClient(OTHER_DB_URI)
+mydb = myclient[DATABASE_NAME]
+
 
 
 async def add_gfilter(gfilters, text, reply_text, btn, file, alert):
     mycol = mydb[str(gfilters)]
-    # mycol.create_index([('text', 'text')]) # Index creation should ideally be handled at startup for efficiency
+    # mycol.create_index([('text', 'text')])
 
     data = {
         'text':str(text),
@@ -28,19 +28,18 @@ async def add_gfilter(gfilters, text, reply_text, btn, file, alert):
     }
 
     try:
-        await mycol.update_one({'text': str(text)},  {"$set": data}, upsert=True)
-    except Exception as e:
-        logger.exception(f'Some error occured! {e}', exc_info=True)
+        mycol.update_one({'text': str(text)},  {"$set": data}, upsert=True)
+    except:
+        logger.exception('Some error occured!', exc_info=True)
              
      
 async def find_gfilter(gfilters, name):
     mycol = mydb[str(gfilters)]
     
     query = mycol.find( {"text":name})
+    # query = mycol.find( { "$text": {"$search": name}})
     try:
-        file = await query.to_list(length=1)
-        if file:
-            file = file[0]
+        for file in query:
             reply_text = file['reply']
             btn = file['btn']
             fileid = file['file']
@@ -48,11 +47,8 @@ async def find_gfilter(gfilters, name):
                 alert = file['alert']
             except:
                 alert = None
-            return reply_text, btn, alert, fileid
-        else:
-            return None, None, None, None
-    except Exception as e:
-        logger.exception(f'Error in find_gfilter: {e}', exc_info=True)
+        return reply_text, btn, alert, fileid
+    except:
         return None, None, None, None
 
 
@@ -62,11 +58,10 @@ async def get_gfilters(gfilters):
     texts = []
     query = mycol.find()
     try:
-        async for file in query:
+        for file in query:
             text = file['text']
             texts.append(text)
-    except Exception as e:
-        logger.exception(f'Error in get_gfilters: {e}', exc_info=True)
+    except:
         pass
     return texts
 
@@ -75,9 +70,9 @@ async def delete_gfilter(message, text, gfilters):
     mycol = mydb[str(gfilters)]
     
     myquery = {'text':text }
-    query_count = await mycol.count_documents(myquery)
-    if query_count == 1:
-        await mycol.delete_one(myquery)
+    query = mycol.count_documents(myquery)
+    if query == 1:
+        mycol.delete_one(myquery)
         await message.reply_text(
             f"'`{text}`'  deleted. I'll not respond to that gfilter anymore.",
             quote=True,
@@ -87,29 +82,27 @@ async def delete_gfilter(message, text, gfilters):
         await message.reply_text("Couldn't find that gfilter!", quote=True)
 
 async def del_allg(message, gfilters):
-    collection_names = await mydb.list_collection_names()
-    if str(gfilters) not in collection_names:
+    if str(gfilters) not in mydb.list_collection_names():
         await message.edit_text("Nothing to Remove !")
         return
 
     mycol = mydb[str(gfilters)]
     try:
-        await mycol.drop()
+        mycol.drop()
         await message.edit_text(f"All gfilters has been removed !")
-    except Exception as e:
-        logger.exception(f'Error in del_allg: {e}', exc_info=True)
+    except:
         await message.edit_text("Couldn't remove all gfilters !")
         return
 
 async def count_gfilters(gfilters):
     mycol = mydb[str(gfilters)]
 
-    count = await mycol.count_documents({})
+    count = mycol.count()
     return False if count == 0 else count
 
 
 async def gfilter_stats():
-    collections = await mydb.list_collection_names()
+    collections = mydb.list_collection_names()
 
     if "CONNECTION" in collections:
         collections.remove("CONNECTION")
@@ -117,10 +110,9 @@ async def gfilter_stats():
     totalcount = 0
     for collection in collections:
         mycol = mydb[collection]
-        count = await mycol.count_documents({})
+        count = mycol.count()
         totalcount += count
 
     totalcollections = len(collections)
 
     return totalcollections, totalcount
-
