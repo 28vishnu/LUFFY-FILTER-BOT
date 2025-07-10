@@ -20,7 +20,7 @@ from shortzy import Shortzy
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 join_db = JoinReqs
-BTN_URL_REGEX = re.compile(r"(\[([^\[]+?)\]\((buttonurl|buttonalert):(?:/{0,2})(.+?)(:same)?\))")
+BTN_URL_REGEX = re.compile(r"(\[([^\[]+?)\\]\((buttonurl|buttonalert):(?:/{0,2})(.+?)(:same)?\))")
 
 imdb = Cinemagoer() 
 TOKENS = {}
@@ -365,3 +365,62 @@ async def get_seconds(time_string):
     else:
         raise ValueError("Invalid time unit")
 
+# Placeholder for broadcast_messages
+async def broadcast_messages(client, message, users):
+    """
+    Placeholder function for broadcasting messages to users.
+    Replace with actual implementation.
+    """
+    logger.info(f"Attempting to broadcast message to {len(users)} users.")
+    # Example: Iterate through users and send message
+    success_count = 0
+    failed_count = 0
+    for user_id in users:
+        try:
+            await client.copy_message(chat_id=user_id, from_chat_id=message.chat.id, message_id=message.id)
+            success_count += 1
+            await asyncio.sleep(0.1) # Small delay to avoid flood waits
+        except FloodWait as e:
+            logger.warning(f"FloodWait encountered: {e.value} seconds. Waiting...")
+            await asyncio.sleep(e.value)
+            try: # Retry after flood wait
+                await client.copy_message(chat_id=user_id, from_chat_id=message.chat.id, message_id=message.id)
+                success_count += 1
+            except Exception as ex:
+                logger.error(f"Failed to send broadcast message to user {user_id} after retry: {ex}")
+                failed_count += 1
+        except Exception as e:
+            logger.error(f"Failed to send broadcast message to user {user_id}: {e}")
+            failed_count += 1
+    logger.info(f"Broadcast to users completed. Success: {success_count}, Failed: {failed_count}")
+    return success_count, failed_count
+
+# Placeholder for broadcast_messages_group
+async def broadcast_messages_group(client, message, chats):
+    """
+    Placeholder function for broadcasting messages to groups.
+    Replace with actual implementation.
+    """
+    logger.info(f"Attempting to broadcast message to {len(chats)} groups.")
+    # Example: Iterate through chats and send message
+    success_count = 0
+    failed_count = 0
+    for chat_id in chats:
+        try:
+            await client.copy_message(chat_id=chat_id, from_chat_id=message.chat.id, message_id=message.id)
+            success_count += 1
+            await asyncio.sleep(0.1) # Small delay to avoid flood waits
+        except FloodWait as e:
+            logger.warning(f"FloodWait encountered: {e.value} seconds. Waiting...")
+            await asyncio.sleep(e.value)
+            try: # Retry after flood wait
+                await client.copy_message(chat_id=chat_id, from_chat_id=message.chat.id, message_id=message.id)
+                success_count += 1
+            except Exception as ex:
+                logger.error(f"Failed to send broadcast message to group {chat_id} after retry: {ex}")
+                failed_count += 1
+        except Exception as e:
+            logger.error(f"Failed to send broadcast message to group {chat_id}: {e}")
+            failed_count += 1
+    logger.info(f"Broadcast to groups completed. Success: {success_count}, Failed: {failed_count}")
+    return success_count, failed_count
