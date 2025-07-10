@@ -494,3 +494,10 @@ def split_quotes(text: str):
         
     return parts
 
+def gfilterparser(text):
+    """
+    Parses text specifically for global filters.
+    This is a placeholder; implement your specific parsing logic for gfilters.
+    """
+    # Example: a very simple parser that returns the text itself for gfilters
+    return text.strip()
